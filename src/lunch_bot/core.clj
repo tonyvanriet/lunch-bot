@@ -14,18 +14,22 @@
   (println "lunch-bot dying"))
 
 
+(defn wait-for-console-quit []
+  (loop []
+      (let [input (read-line)]
+        (when-not (= input "q")
+          (recur)))))
+
+
 (defn -main
   [& args]
 
   (try
 
     (slack/connect abot-api-token)
-
     (println "lunch-bot running...")
-    (loop []
-      (let [input (read-line)]
-        (when-not (= input "q")
-          (recur))))
+
+    (wait-for-console-quit)
 
     (finally (shutdown-app))))
 
