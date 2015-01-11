@@ -8,21 +8,27 @@
 (def tonyvanriet-api-token "xoxp-3215134233-3215134235-3216767432-ca2d3d")
 
 
+(defn shutdown-app []
+  (slack/disconnect)
+  (shutdown-agents)
+  (println "lunch-bot dying"))
+
+
 (defn -main
   [& args]
 
-  (slack/connect abot-api-token)
+  (try
 
-  (println "lunch-bot running...")
+    (slack/connect abot-api-token)
 
-  (loop []
-    (let [input (read-line)]
-      (if (= input "q")
-        (do
-          (slack/disconnect)
-          (shutdown-agents)
-          (println "lunch-bot dying"))
-        (recur)))))
+    (println "lunch-bot running...")
+    (loop []
+      (let [input (read-line)]
+        (when-not (= input "q")
+          (recur))))
+
+    (finally (shutdown-app))))
+
 
 
 
