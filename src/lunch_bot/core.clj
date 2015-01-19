@@ -7,9 +7,9 @@
     [rtm-transmit :as tx]]))
 
 
-(def abot-api-token "xoxb-3215140999-UuVgqNVwxMDcWNrVeoOMMtxw")
-(def someotherbot-api-token "xoxb-3246812512-FRBtlsTndTc2fGEhwq1rOhcD")
-(def tonyvanriet-api-token "xoxp-3215134233-3215134235-3216767432-ca2d3d")
+(def api-token (->> "api-token.txt"
+                    (slurp)
+                    (clojure.string/trim)))
 
 
 (defmulti handle-event :type)
@@ -52,7 +52,7 @@
 
   (try
 
-    (slack/connect abot-api-token handle-event)
+    (slack/connect api-token handle-event)
     (println "lunch-bot running...")
 
     (wait-for-console-quit)
