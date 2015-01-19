@@ -14,7 +14,6 @@
 
 (defmulti handle-event :type)
 
-
 (defmethod handle-event "message"
   [event]
   (let [user-id (:user event)
@@ -24,7 +23,6 @@
     (when (and (not= user-id self-id)
                (not (:is_bot user)))
       (tx/say-message channel-id "That's what she said"))))
-
 
 (defmethod handle-event "channel_joined"
   [event]
@@ -46,7 +44,7 @@
 (defn shutdown-app []
   (slack/disconnect)
   (shutdown-agents)
-  (println "lunch-bot dying"))
+  (println "...lunch-bot dying"))
 
 
 (defn -main
@@ -60,7 +58,6 @@
     (wait-for-console-quit)
 
     (finally (shutdown-app))))
-
 
 
 
