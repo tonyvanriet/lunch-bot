@@ -12,6 +12,11 @@
                     (clojure.string/trim)))
 
 
+(defn handle-command
+  [channel-id event]
+  (tx/say-message channel-id (:text event)))
+
+
 (defmulti handle-event :type)
 
 (defmethod handle-event "message"
@@ -21,13 +26,13 @@
         self-id (:id (state/get-self))
         channel-id (:channel event)]
     (when (and (not= user-id self-id)
-               (not (:is_bot user)))
-      (tx/say-message channel-id "That's what she said"))))
+               (not (:is_bot user))
+               (re-matches #"lunch .*" (:text event)))
+      (handle-command channel-id event))))
 
 (defmethod handle-event "channel_joined"
   [event]
   nil)
-
 
 (defmethod handle-event :default
   [event]
