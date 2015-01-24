@@ -48,21 +48,24 @@
 
 (defn shutdown-app []
   (slack/disconnect)
-  (shutdown-agents)
   (println "...lunch-bot dying"))
+
+
+(defn start []
+  (slack/connect api-token handle-event)
+  (println "lunch-bot running..."))
+
+(defn stop []
+  (shutdown-app))
 
 
 (defn -main
   [& args]
 
   (try
-
-    (slack/connect api-token handle-event)
-    (println "lunch-bot running...")
-
+    (start)
     (wait-for-console-quit)
-
-    (finally (shutdown-app))))
-
-
+    (finally
+     (stop)
+     (shutdown-agents))))
 
