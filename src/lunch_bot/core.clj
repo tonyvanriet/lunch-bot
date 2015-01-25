@@ -27,6 +27,7 @@
         channel-id (:channel event)]
     (when (and (not= user-id self-id)
                (not (:is_bot user))
+               (:text event)
                (re-matches #"lunch .*" (:text event)))
       (handle-command channel-id event))))
 
