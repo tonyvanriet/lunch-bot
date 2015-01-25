@@ -22,8 +22,8 @@
 (defmethod handle-event "message"
   [event]
   (let [user-id (:user event)
-        user (state/get-user user-id)
-        self-id (:id (state/get-self))
+        user (state/id->user user-id)
+        self-id (:id (state/self))
         channel-id (:channel event)]
     (when (and (not= user-id self-id)
                (not (:is_bot user))
