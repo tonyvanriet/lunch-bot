@@ -5,43 +5,19 @@
 
 (def events-single-buyer
 
-  [{:person "bob"
-    :type :bought
-    :amount 40}
-   {:person "steve"
-    :type :cost
-    :amount 10}
-   {:person "dude"
-    :type :cost
-    :amount 8}
-   {:person "rozz"
-    :type :cost
-    :amount 12}
-   {:person "bob"
-    :type :cost
-    :amount 10}
+  [{:person "bob"   :type :bought  :amount 40}
+   {:person "steve" :type :cost    :amount 10}
+   {:person "dude"  :type :cost    :amount 8}
+   {:person "rozz"  :type :cost    :amount 12}
+   {:person "bob"   :type :cost    :amount 10}
 
-   {:person "steve"
-    :type :paid
-    :amount 10
-    :recipient "bob"}
-   {:person "dude"
-    :type :paid
-    :amount 8
-    :recipient "bob"}
+   {:person "steve" :type :paid    :amount 10  :recipient "bob"}
+   {:person "dude"  :type :paid    :amount 8   :recipient "bob"}
 
-   {:person "bob"
-    :type :bought
-    :amount 20}
-   {:person "steve"
-    :type :cost
-    :amount 7}
-   {:person "rozz"
-    :type :cost
-    :amount 4}
-   {:person "bob"
-    :type :cost
-    :amount 9}])
+   {:person "bob"   :type :bought  :amount 20}
+   {:person "steve" :type :cost    :amount 7}
+   {:person "rozz"  :type :cost    :amount 4}
+   {:person "bob"   :type :cost    :amount 9}])
 
 
 (deftest create-balances-from-events
@@ -50,5 +26,24 @@
     (is (= (get balances "steve") -7))
     (is (= (get balances "dude") 0))
     (is (= (get balances "rozz") -16))))
+
+
+(def events-multi-buyers
+
+  [{:person "bob"    :type :bought  :amount 40}
+   {:person "steve"  :type :cost    :amount 10}
+   {:person "dude"   :type :cost    :amount 8}
+   {:person "rozz"   :type :cost    :amount 12}
+   {:person "bob"    :type :cost    :amount 10}
+
+   {:person "steve"  :type :bought  :amount 20}
+   {:person "steve"  :type :cost    :amount 7}
+   {:person "rozz"   :type :cost    :amount 4}
+   {:person "bob"    :type :cost    :amount 9}
+
+   {:person "rozz"   :type :bought  :amount 30}
+   {:person "dude"   :type :cost    :amount 10}
+   {:person "rozz"   :type :cost    :amount 10}
+   {:person "bob"    :type :cost    :amount 10}])
 
 
