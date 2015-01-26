@@ -31,9 +31,31 @@
                [person (reduce + (map #(:amount %) balance-changes))]))))
 
 
+(defn apply-event
+  [balances event]
+  (let [event-balances (events->balances [event])]
+    (merge-with + balances event-balances)))
+
+
+(defn sort-balances
+  [balances]
+  (sort-by val balances))
+
+
+(defn biggest-payment
+  [balances]
+  (let [sorted-balances (sort-balances balances)
+        min-balance (first sorted-balances)
+        max-balance (last sorted-balances)
+        amount (min (* -1 (val min-balance)) (val max-balance))]
+    {:person (key min-balance)
+     :type :paid
+     :amount amount
+     :recipient (key max-balance)}))
+
+
 (defn minimize-debt
-  [events]
-  nil)
-
-
+  [balances]
+  (let [payment (biggest-payment balances)]
+    [payment (apply-event balances payment)]))
 
