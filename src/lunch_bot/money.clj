@@ -37,12 +37,20 @@
     (merge-with + balances event-balances)))
 
 
+(defn apply-events
+  [balances events]
+  (reduce #(apply-event %1 %2) balances events))
+
+
 (defn sort-balances
   [balances]
   (sort-by val balances))
 
 
-(defn biggest-payment
+(defn biggest-payoff
+  "determines the largest payoff that can be made between two people to bring
+  one of their balances to zero. returns nil if there are no negative balances
+  to payoff."
   [balances]
   (let [sorted-balances (sort-balances balances)
         min-balance (first sorted-balances)
@@ -54,8 +62,21 @@
      :recipient (key max-balance)}))
 
 
-(defn minimize-debt
+(defn minimal-payoffs
+  "returns a set of payments that could be made to eliminate all debt in the
+  shortest number of payments"
   [balances]
-  (let [payment (biggest-payment balances)]
-    [payment (apply-event balances payment)]))
+  (loop [payments []
+         balances balances]
+    (if (not-any? #(< (val %) 0) balances)
+      payments
+      (let [payment (biggest-payoff balances)]
+        (recur (conj payments payment)
+               (apply-event balances payment))))))
+
+
+(defn consolidation-payoffs
+  "returns a set of payments that could be made to consolidate all of the debtor's
+  debt to the consolidatee."
+  [balances debtor consolidatee])
 
