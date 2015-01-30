@@ -58,8 +58,8 @@
         balances (events->balances initial-events)
         payoffs (minimal-payoffs balances)]
     ; is there some better way to test the values of a collection without regard for their order?
-    ; I shouldn't have to explicitely check the count, and this pattern isn't reliable if any of
-    ; items are duplicated.
+    ; I shouldn't have to explicitly check the count, and this pattern isn't reliable if any of
+    ; the items are duplicated.
     (is (= (count payoffs) 2))
     (is (some #(= % {:person "a" :type :paid :amount 10 :recipient "c"}) payoffs))
     (is (some #(= % {:person "a" :type :paid :amount 2 :recipient "b"}) payoffs))))
@@ -72,10 +72,17 @@
     (is (every? #(= (val %) 0) paid-off-balances))))
 
 
-(deftest consolidated-balances-correct
+(deftest get-balance-gets-correct-balance
+  (let [balances balances-multi-buyers]
+    (are [person balance]
+      (= (get-balance balances person) balance)
+      "bob" 11 "steve" 3 "dude" -18 "rozz" 4)))
+
+
+(deftest consolidation-payments-correct
   (let [balances {"bob" 11, "steve" 3, "dude" -18, "rozz" 4}
-        payoffs (consolidation-payoffs balances "dude" "bob")]
-    (is (= (count payoffs) 3))
-    (is (some #(= % {:person "dude" :type :paid :amount 18 :recipient "bob"}) payoffs))
-    (is (some #(= % {:person "bob" :type :paid :amount 3 :recipient "steve"}) payoffs))
-    (is (some #(= % {:person "bob" :type :paid :amount 4 :recipient "rozz"}) payoffs))))
+        [payoff additional-payments] (consolidation-payments balances "dude" "bob")]
+    (is (= payoff {:person "dude" :type :paid :amount 18 :recipient "bob"}))
+    (is (= (count additional-payments) 2))
+    (is (some #(= % {:person "bob" :type :paid :amount 3 :recipient "steve"}) additional-payments))
+    (is (some #(= % {:person "bob" :type :paid :amount 4 :recipient "rozz"}) additional-payments))))

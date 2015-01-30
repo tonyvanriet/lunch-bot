@@ -47,6 +47,14 @@
   (sort-by val balances))
 
 
+(defn get-balance
+  [balances person]
+  (->> balances
+       (filter #(= person (key %)))
+       first
+       val))
+
+
 (defn biggest-payoff
   "determines the largest payoff that can be made between two people to bring
   one of their balances to zero. returns nil if there are no negative balances
@@ -75,8 +83,18 @@
                (apply-event balances payment))))))
 
 
-(defn consolidation-payoffs
+(defn consolidation-payments
   "returns a set of payments that could be made to consolidate all of the debtor's
-  debt to the consolidatee."
-  [balances debtor consolidatee])
+  debt to the recipient.
+  assumes the debtor has a negative balance."
+  [balances debtor recipient]
+  (let [debt-amount (get-balance balances debtor)
+        consolidated-payoff {:person debtor
+                             :type :paid
+                             :amount (* -1 debt-amount)
+                             :recipient recipient}
+        balances-after-payment (apply-event balances consolidated-payoff)
+        additional-payments (minimal-payoffs balances-after-payment)]
+    [consolidated-payoff additional-payments]))
+
 
