@@ -1,5 +1,4 @@
-(ns lunch-bot.money
-  (:gen-class))
+(ns lunch-bot.money)
 
 
 (defn balance-change
