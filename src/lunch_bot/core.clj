@@ -26,9 +26,9 @@
 
 (defn wait-for-console-quit []
   (loop []
-      (let [input (read-line)]
-        (when-not (= input "q")
-          (recur)))))
+    (let [input (read-line)]
+      (when-not (= input "q")
+        (recur)))))
 
 
 (defn shutdown-app []
@@ -51,6 +51,6 @@
     (start)
     (wait-for-console-quit)
     (finally
-     (stop)
-     (shutdown-agents))))
+      (stop)
+      (shutdown-agents))))
 
