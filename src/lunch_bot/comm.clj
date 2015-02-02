@@ -91,12 +91,19 @@
     (parse-command cmd-text)))
 
 
+(defn process-command
+  "parses the message text for a command, carries out that command,
+  and returns a reply string"
+  [channel-id user-id text]
+  (let [cmd-func (message->command-func channel-id text)]
+    (if cmd-func
+      (str (cmd-func user-id))
+      "huh?")))
+
+
 (defn handle-message
-  [{text :text, user-id :user, channel-id :channel}]
-    (when (not (state/bot? user-id))
-      (let [cmd-func (message->command-func channel-id text)
-            reply (if cmd-func
-                    (str (cmd-func user-id))
-                    "huh?")]
-        (tx/say-message channel-id reply))))
+  [{channel-id :channel, user-id :user, text :text}]
+  (when (not (state/bot? user-id))
+    (when-let [cmd-reply (process-command channel-id user-id text)]
+      (tx/say-message channel-id cmd-reply))))
 
