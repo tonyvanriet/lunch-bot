@@ -93,11 +93,10 @@
 
 (defn handle-message
   [{text :text, user-id :user, channel-id :channel}]
-  (let [user (state/id->user user-id)]
-    (when (not (:is_bot user))
+    (when (not (state/bot? user-id))
       (let [cmd-func (message->command-func channel-id text)
             reply (if cmd-func
                     (str (cmd-func user-id))
                     "huh?")]
-        (tx/say-message channel-id reply)))))
+        (tx/say-message channel-id reply))))
 
