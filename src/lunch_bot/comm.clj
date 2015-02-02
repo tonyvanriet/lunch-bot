@@ -63,9 +63,9 @@
   [command-template]
   (cond (= command-template [:paid :user :amount])
         (fn [words commander]
-          {:person commander
-           :type :paid
-           :amount (word->amount (nth words 2))
+          {:person    commander
+           :type      :paid
+           :amount    (word->amount (nth words 2))
            :recipient (word->user-id (nth words 1))})))
 
 
