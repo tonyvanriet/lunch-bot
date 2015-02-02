@@ -1,4 +1,4 @@
-(ns lunch-bot.communicate
+(ns lunch-bot.comm
   (:require [clojure.string :as str]
             [clj-slack-client
              [team-state :as state]

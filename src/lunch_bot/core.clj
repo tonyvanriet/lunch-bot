@@ -1,7 +1,7 @@
 (ns lunch-bot.core
   (:gen-class)
   (:require
-    [lunch-bot.communicate :as comm]
+    [lunch-bot.comm :as comm]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]]))
