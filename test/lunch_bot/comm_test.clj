@@ -18,3 +18,17 @@
 (deftest process-command-unrecognized-reply-correct
   (is (= (process-command "D234" "U1234" "asdf") "huh?")))
 
+
+(deftest parse-amounts
+  (are [word amount]
+    (= (word->amount word) amount)
+    "2.34" 2.34
+    "5" 5.0
+    "$2345.67" 2345.67
+    ".50" 0.5
+    "55.123" nil
+    "1,234" 1234.0
+    "$1,234.56" 1234.56
+    "12." nil
+    "." nil))
+

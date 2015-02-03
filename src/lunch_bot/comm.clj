@@ -47,8 +47,12 @@
 
 (defn word->amount
   [word]
-  (when-let [[_ amount] (re-find #"^\$?(\d*\.?\d{0,2})$" word)]
-    (Double. amount)))
+  ;; regex is a modified version of this answer on SO
+  ;; http://stackoverflow.com/questions/354044/what-is-the-best-u-s-currency-regex
+  (when-let [[_ amount-str] (re-find #"^[+-]?\$?(([0-9]{1,3}(?:,?[0-9]{3})*|[0-9]*)(?:\.[0-9]{1,2})?)$" word)]
+    (-> amount-str
+        (.replaceAll "," "")
+        (Double.))))
 
 
 (defn word->command-element
