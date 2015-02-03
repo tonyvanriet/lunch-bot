@@ -67,12 +67,20 @@
 
 (defn command-template->func
   [command-template]
-  (cond (= command-template [:paid :user :amount])
-        (fn [words commander]
-          {:person    commander
-           :type      :paid
-           :amount    (word->amount (nth words 2))
-           :recipient (word->user-id (nth words 1))})))
+  (cond
+
+    (= command-template [:paid :user :amount])
+    (fn [words commander]
+      {:command-type :event
+       :event        {:person    commander
+                      :type      :paid
+                      :amount    (word->amount (nth words 2))
+                      :recipient (word->user-id (nth words 1))}})
+
+    (= command-template [:show :balances])
+    (fn [_ _]
+      {:command-type :show
+       :info         :balances})))
 
 
 (defn parse-command

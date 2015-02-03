@@ -9,10 +9,11 @@
         amount 34.5
         text (str "paid <@" recipient "> " amount)
         reply (process-command "D234" payer text)]
-    (is (= (read-string reply) {:person    payer
-                                :type      :paid
-                                :amount    amount
-                                :recipient recipient}))))
+    (is (= (read-string reply) {:command-type :event
+                                :event        {:person    payer
+                                               :type      :paid
+                                               :amount    amount
+                                               :recipient recipient}}))))
 
 
 (deftest process-command-unrecognized-reply-correct
