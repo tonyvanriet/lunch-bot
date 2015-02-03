@@ -11,8 +11,8 @@
 ;; the input string is broken into words.
 ;; each word is classified as a particular kind of command element.
 ;; command elements can be:
-;;   specific actions (:paid, :bought, :cost)
-;;   the target of an action (:user, :restaurant)
+;;   specific keywords (:paid, :bought, :cost, :show, :balances)
+;;   the target of a keyword (:user, :restaurant)
 ;;   amount (:amount)
 ;;   date (:date)
 ;;   unnecessary text (:filler)
@@ -37,12 +37,14 @@
     user-id))
 
 
-(defn word->action
+(def keyword-strs ["paid" "bought" "cost" "show" "balances"])
+
+
+(defn word->keyword
   [word]
   (let [lword (.toLowerCase word)]
-    (cond (= lword "paid") :paid
-          (= lword "bought") :bought
-          (= lword "cost") :cost)))
+    (when-let [keyword-str (some #(when (.startsWith % lword) %) keyword-strs)]
+      (keyword keyword-str))))
 
 
 (defn word->amount
@@ -57,8 +59,8 @@
 
 (defn word->command-element
   [word]
-  (let [action (word->action word)]
-    (cond action action
+  (let [keyword (word->keyword word)]
+    (cond keyword keyword
           (word->user-id word) :user
           (word->amount word) :amount)))
 
