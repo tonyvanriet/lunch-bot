@@ -8,7 +8,7 @@
 ;; the input string is broken into words.
 ;; each word is classified as a particular kind of command element.
 ;; command elements can be:
-;;   specific keywords (:paid, :bought, :cost, :show, :balances)
+;;   specific keywords (:paid, :bought, :cost, :balances, :payoffs, :events)
 ;;   the target of a keyword (:user, :restaurant)
 ;;   amount (:amount)
 ;;   date (:date)
@@ -34,14 +34,25 @@
     user-id))
 
 
-(def keyword-strs ["paid" "bought" "cost" "show" "balances"])
+(def command-keyword-strs ["paid" "bought" "cost" "show"])
+
+(def noun-strs ["balances" "payoffs" "events"])
 
 
 (defn word->keyword
-  [word]
+  [word keyword-strs]
   (let [lword (.toLowerCase word)]
     (when-let [keyword-str (some #(when (.startsWith % lword) %) keyword-strs)]
       (keyword keyword-str))))
+
+
+(defn word->command-keyword
+  [word]
+  (word->keyword word command-keyword-strs))
+
+(defn word->noun
+  [word]
+  (word->keyword word noun-strs))
 
 
 (defn word->amount
@@ -56,8 +67,9 @@
 
 (defn word->command-element
   [word]
-  (let [keyword (word->keyword word)]
-    (cond keyword keyword
+  (let [cmd-keyword (word->command-keyword word)]
+    (cond cmd-keyword cmd-keyword
+          (word->noun word) :noun
           (word->user-id word) :user
           (word->amount word) :amount)))
 
@@ -74,10 +86,12 @@
                       :amount    (word->amount (nth words 2))
                       :recipient (word->user-id (nth words 1))}})
 
-    (= command-template [:show :balances])
-    (fn [_ _]
+    ;; TODO: (= command-template [:paid :amount :user])
+
+    (= command-template [:noun])
+    (fn [words _]
       {:command-type :show
-       :info-type    :balances})))
+       :info-type    (word->noun (first words))})))
 
 
 (defn text->command-func
