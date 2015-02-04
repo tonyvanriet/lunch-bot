@@ -9,10 +9,10 @@
         amount 34.5
         text (str "paid <@" recipient "> " amount)]
     (is (= (message->command payer text) {:command-type :event
-                                          :event        {:person    payer
-                                                         :type      :paid
-                                                         :amount    amount
-                                                         :recipient recipient}}))))
+                                          :event        {:person payer
+                                                         :type   :paid
+                                                         :amount amount
+                                                         :to     recipient}}))))
 
 
 (deftest process-command-unrecognized-reply-correct

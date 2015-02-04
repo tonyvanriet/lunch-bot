@@ -7,11 +7,11 @@
 
 
 (defn event->balance-changes
-  [{:keys [type person recipient amount]}]
+  [{:keys [type person to amount]}]
   (cond (= type :bought) (balance-change person amount)
         (= type :cost) (balance-change person (* -1 amount))
         (= type :paid) [(balance-change person amount)
-                        (balance-change recipient (* -1 amount))]))
+                        (balance-change to (* -1 amount))]))
 
 
 (defn events->balance-changes
@@ -63,10 +63,10 @@
         min-balance (first sorted-balances)
         max-balance (last sorted-balances)
         amount (min (* -1 (val min-balance)) (val max-balance))]
-    {:person    (key min-balance)
-     :type      :paid
-     :amount    amount
-     :recipient (key max-balance)}))
+    {:person (key min-balance)
+     :type   :paid
+     :amount amount
+     :to     (key max-balance)}))
 
 
 (defn minimal-payoffs
@@ -88,10 +88,10 @@
   assumes the debtor has a negative balance."
   [balances debtor recipient]
   (let [debt-amount (get-balance balances debtor)
-        consolidated-payoff {:person    debtor
-                             :type      :paid
-                             :amount    (* -1 debt-amount)
-                             :recipient recipient}
+        consolidated-payoff {:person debtor
+                             :type   :paid
+                             :amount (* -1 debt-amount)
+                             :to     recipient}
         balances-after-payment (apply-event balances consolidated-payoff)
         additional-payments (minimal-payoffs balances-after-payment)]
     [consolidated-payoff additional-payments]))

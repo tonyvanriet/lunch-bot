@@ -81,10 +81,10 @@
     (= command-template [:paid :user :amount])
     (fn [words commander]
       {:command-type :event
-       :event        {:person    commander
-                      :type      :paid
-                      :amount    (word->amount (nth words 2))
-                      :recipient (word->user-id (nth words 1))}})
+       :event        {:person commander
+                      :type   :paid
+                      :amount (word->amount (nth words 2))
+                      :to     (word->user-id (nth words 1))}})
 
     ;; TODO: (= command-template [:paid :amount :user])
 
