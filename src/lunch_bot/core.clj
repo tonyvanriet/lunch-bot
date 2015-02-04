@@ -8,9 +8,10 @@
      [rtm-transmit :as tx]]))
 
 
-(def api-token (->> "api-token.txt"
-                    (slurp)
-                    (clojure.string/trim)))
+(defn api-token []
+  (->> "api-token.txt"
+       (slurp)
+       (clojure.string/trim)))
 
 
 (defn message->command-text
