@@ -23,6 +23,21 @@
       cmd-text)))
 
 
+(defmulti handle-command :command-type)
+
+(defmethod handle-command :unrecognized
+  [_]
+  "huh?")
+
+(defmethod handle-command :show
+  [{:keys [info-type]}]
+  (str "showing " info-type))
+
+(defmethod handle-command :event
+  [{:keys [event]}]
+  (str "adding event " event))
+
+
 (defmulti handle-slack-event :type)
 
 (defmethod handle-slack-event "message"
@@ -30,8 +45,9 @@
   (when (not (state/bot? user-id))
     (when-let [cmd-text (message->command-text channel-id text)]
       (let [cmd (comm/message->command user-id cmd-text)
-            cmd-reply (str cmd)]
-        (tx/say-message channel-id cmd-reply)))))
+            cmd-reply (handle-command cmd)]
+        (when cmd-reply
+          (tx/say-message channel-id cmd-reply))))))
 
 (defmethod handle-slack-event "channel_joined" [event]
   nil)
