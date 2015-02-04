@@ -7,17 +7,16 @@
   (let [payer "U1234"
         recipient "U2345"
         amount 34.5
-        text (str "paid <@" recipient "> " amount)
-        reply (process-command "D234" payer text)]
-    (is (= (read-string reply) {:command-type :event
-                                :event        {:person    payer
-                                               :type      :paid
-                                               :amount    amount
-                                               :recipient recipient}}))))
+        text (str "paid <@" recipient "> " amount)]
+    (is (= (message->command payer text) {:command-type :event
+                                          :event        {:person    payer
+                                                         :type      :paid
+                                                         :amount    amount
+                                                         :recipient recipient}}))))
 
 
 (deftest process-command-unrecognized-reply-correct
-  (is (= (process-command "D234" "U1234" "asdf") "huh?")))
+  (is (= (message->command "U1234" "asdf") {:command-type :unrecognized})))
 
 
 (deftest parse-amounts

@@ -1,8 +1,5 @@
 (ns lunch-bot.comm
-  (:require [clojure.string :as str]
-            [clj-slack-client
-             [team-state :as state]
-             [rtm-transmit :as tx]]))
+  (:require [clojure.string :as str]))
 
 
 ;;
@@ -80,10 +77,10 @@
     (= command-template [:show :balances])
     (fn [_ _]
       {:command-type :show
-       :info         :balances})))
+       :info-type    :balances})))
 
 
-(defn parse-command
+(defn text->command-func
   [text]
   (let [words (str/split text #" +")
         command-template (map #(word->command-element %) words)]
@@ -91,33 +88,10 @@
       (fn [commander] (cmd-func words commander)))))
 
 
-(defn message->command-text
-  [channel-id text]
-  (if (state/dm? channel-id)
-    text
-    (when-let [[_ cmd-text] (re-find #"lunch (.*)" text)]
-      cmd-text)))
-
-
-(defn message->command-func
-  [channel-id text]
-  (when-let [cmd-text (message->command-text channel-id text)]
-    (parse-command cmd-text)))
-
-
-(defn process-command
-  "parses the message text for a command, carries out that command,
-  and returns a reply string"
-  [channel-id user-id text]
-  (let [cmd-func (message->command-func channel-id text)]
+(defn message->command
+  "parses the message text and returns a command map"
+  [user-id text]
+  (let [cmd-func (text->command-func text)]
     (if cmd-func
-      (str (cmd-func user-id))
-      "huh?")))
-
-
-(defn handle-message
-  [{channel-id :channel, user-id :user, text :text}]
-  (when (not (state/bot? user-id))
-    (when-let [cmd-reply (process-command channel-id user-id text)]
-      (tx/say-message channel-id cmd-reply))))
-
+      (cmd-func user-id)
+      {:command-type :unrecognized})))

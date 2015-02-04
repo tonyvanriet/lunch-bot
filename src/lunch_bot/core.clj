@@ -4,7 +4,8 @@
     [lunch-bot.comm :as comm]
     [clj-slack-client
      [core :as slack]
-     [team-state :as state]]))
+     [team-state :as state]
+     [rtm-transmit :as tx]]))
 
 
 (def api-token (->> "api-token.txt"
@@ -12,15 +13,30 @@
                     (clojure.string/trim)))
 
 
-(defmulti handle-event :type)
+(defn message->command-text
+  "determines if the message should be interpreted as a command, and if so, returns
+  the command text from the message."
+  [channel-id text]
+  (if (state/dm? channel-id)
+    text
+    (when-let [[_ cmd-text] (re-find #"lunch (.*)" text)]
+      cmd-text)))
 
-(defmethod handle-event "message" [event]
-  (comm/handle-message event))
 
-(defmethod handle-event "channel_joined" [event]
+(defmulti handle-slack-event :type)
+
+(defmethod handle-slack-event "message"
+  [{channel-id :channel, user-id :user, text :text}]
+  (when (not (state/bot? user-id))
+    (when-let [cmd-text (message->command-text channel-id text)]
+      (let [cmd (comm/message->command user-id cmd-text)
+            cmd-reply (str cmd)]
+        (tx/say-message channel-id cmd-reply)))))
+
+(defmethod handle-slack-event "channel_joined" [event]
   nil)
 
-(defmethod handle-event :default [event]
+(defmethod handle-slack-event :default [event]
   nil)
 
 
@@ -37,16 +53,19 @@
 
 
 (defn start []
-  (slack/connect api-token handle-event)
+  (slack/connect api-token handle-slack-event)
   (println "lunch-bot running..."))
 
 (defn stop []
   (shutdown-app))
 
+(defn restart []
+  (stop)
+  (start))
+
 
 (defn -main
   [& args]
-
   (try
     (start)
     (wait-for-console-quit)
