@@ -20,8 +20,9 @@
   [channel-id text]
   (if (state/dm? channel-id)
     text
-    (when-let [[_ cmd-text] (re-find #"lunch (.*)" text)]
-      cmd-text)))
+    (let [linkified-self (tx/linkify (state/self-id))]
+      (when-let [[_ cmd-text] (re-find (re-pattern (str linkified-self ":? *(.*)")) text)]
+        cmd-text))))
 
 
 (defmulti handle-command :command-type)
