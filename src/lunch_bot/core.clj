@@ -1,17 +1,23 @@
 (ns lunch-bot.core
   (:gen-class)
   (:require
-    [lunch-bot.comm :as comm]
+    [lunch-bot
+     [comm :as comm]
+     [money :as money]]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
-     [rtm-transmit :as tx]]))
+     [rtm-transmit :as tx]]
+    [clojure.pprint :refer [pprint]]))
 
 
 (defn api-token []
   (->> "api-token.txt"
        (slurp)
        (clojure.string/trim)))
+
+
+(def ^:private money-events (atom nil))
 
 
 (defn message->command-text
@@ -25,6 +31,21 @@
         cmd-text))))
 
 
+(defn pstr
+  [object]
+  (with-out-str (pprint object)))
+
+
+(defn balances->str [balances]
+  (pstr balances))
+
+(defn payoffs->str [payoffs]
+  (pstr payoffs))
+
+(defn events->str [events]
+  (pstr events))
+
+
 (defmulti handle-command :command-type)
 
 (defmethod handle-command :unrecognized
@@ -33,11 +54,24 @@
 
 (defmethod handle-command :show
   [{:keys [info-type]}]
-  (str "showing " info-type))
+  (cond (= info-type :balances)
+        (->> @money-events
+             (money/events->balances)
+             (balances->str))
+
+        (= info-type :payoffs)
+        (->> @money-events
+             (money/events->balances)
+             (money/minimal-payoffs)
+             (payoffs->str))
+
+        (= info-type :events)
+        (events->str @money-events)))
 
 (defmethod handle-command :event
   [{:keys [event]}]
-  (str "adding event " event))
+  (swap! money-events (fn [events] (conj events event)))
+  (str "added event " event))
 
 
 (defmulti handle-slack-event :type)
