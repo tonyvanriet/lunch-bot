@@ -71,7 +71,7 @@
 
 
 (defn start []
-  (slack/connect api-token handle-slack-event)
+  (slack/connect (api-token) handle-slack-event)
   (println "lunch-bot running..."))
 
 (defn stop []
