@@ -8,16 +8,34 @@
      [core :as slack]
      [team-state :as state]
      [rtm-transmit :as tx]]
-    [clojure.pprint :refer [pprint]]))
+    [clojure.pprint :refer [pprint]]
+    [clojure.java.io :as io]
+    [clojure.string :as string]))
 
 
-(defn api-token []
-  (->> "api-token.txt"
-       (slurp)
-       (clojure.string/trim)))
+(def api-token-filename "api-token.txt")
+
+(defn get-api-token-from-file
+  [filename]
+  (let [file (io/file filename)]
+    (if (.exists file)
+      (string/trim (slurp file))
+      (do (spit filename "your-api-token")
+          (println "put your api token in" filename)))))
 
 
 (def ^:private money-events (atom nil))
+
+(defn get-money-events-from-file
+  [filename]
+  (let [file (io/file filename)]
+    (when (.exists file)
+      (read-string (slurp file)))))
+
+(def money-events-filename "events.txt")
+
+(defn initialize-money-events []
+  (swap! money-events (fn [_] (get-money-events-from-file money-events-filename))))
 
 
 (defn message->command-text
@@ -71,6 +89,7 @@
 (defmethod handle-command :event
   [{:keys [event]}]
   (swap! money-events (fn [events] (conj events event)))
+  (spit "events.txt" (pprint @money-events))
   (str "added event " event))
 
 
@@ -104,9 +123,13 @@
   (println "...lunch-bot dying"))
 
 
-(defn start []
-  (slack/connect (api-token) handle-slack-event)
-  (println "lunch-bot running..."))
+(defn start
+  ([]
+    (start (get-api-token-from-file api-token-filename)))
+  ([api-token]
+    (initialize-money-events)
+    (slack/connect api-token handle-slack-event)
+    (println "lunch-bot running...")))
 
 (defn stop []
   (shutdown-app))
