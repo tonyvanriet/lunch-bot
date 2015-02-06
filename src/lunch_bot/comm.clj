@@ -30,7 +30,7 @@
 
 (defn word->user-id
   [word]
-  (when-let [[_ user-id] (re-find #"<@(U.+)>" word)]
+  (when-let [[_ user-id] (re-find #"@(\w+)" word)]
     user-id))
 
 
@@ -62,7 +62,7 @@
   (when-let [[_ amount-str] (re-find #"^([+-]?\$?([0-9]{1,3}(?:,?[0-9]{3})*|[0-9]*)(?:\.[0-9]{1,2})?)$" word)]
     (-> amount-str
         (str/replace #",|\$" "")
-        (Double.))))
+        (BigDecimal.))))
 
 
 (defn word->command-element
