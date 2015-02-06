@@ -64,12 +64,25 @@
     (is (some #(= % {:person "a" :type :paid :amount 10 :to "c"}) payoffs))
     (is (some #(= % {:person "a" :type :paid :amount 2 :to "b"}) payoffs))))
 
-
 (deftest minimal-payoffs-yield-zero-balances
   (let [balances balances-multi-buyers
         payoffs (minimal-payoffs balances)
         paid-off-balances (apply-events balances payoffs)]
     (is (every? #(= (val %) 0) paid-off-balances))))
+
+(deftest minimal-payoffs-handles-balances-with-non-zero-sum
+  (testing "balances sum > 0"
+  (let [bals {"a" 5.1M, "b" 6.2M, "c" -8.3M}
+        payoffs (minimal-payoffs bals)]
+    (is (= (count payoffs) 2))
+    (is (some #(= % {:person "c" :type :paid :amount 6.2M :to "b"}) payoffs))
+    (is (some #(= % {:person "c" :type :paid :amount 2.1M :to "a"}) payoffs))))
+  (testing "balances sum < 0"
+    (let [bals {"a" 5.1M, "b" 6.2M, "c" -12.3M}
+          payoffs (minimal-payoffs bals)]
+      (is (= (count payoffs) 2))
+      (is (some #(= % {:person "c" :type :paid :amount 6.2M :to "b"}) payoffs))
+      (is (some #(= % {:person "c" :type :paid :amount 5.1M :to "a"}) payoffs)))))
 
 
 (deftest get-balance-gets-correct-balance

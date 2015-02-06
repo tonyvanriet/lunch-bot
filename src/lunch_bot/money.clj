@@ -75,7 +75,8 @@
   [balances]
   (loop [payments []
          balances balances]
-    (if (not-any? #(< (val %) 0) balances)
+    (if (or (every? #(<= (val %) 0) balances)
+            (every? #(>= (val %) 0) balances))
       payments
       (let [payment (biggest-payoff balances)]
         (recur (conj payments payment)
