@@ -30,7 +30,7 @@
 
 (defn word->user-id
   [word]
-  (when-let [[_ user-id] (re-find #"@(\w+)" word)]
+  (when-let [[_ user-id] (re-find #"<@(U.+)>" word)]
     user-id))
 
 
