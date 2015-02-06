@@ -29,7 +29,8 @@
 (defn get-money-events-from-file
   [filename]
   (let [file (io/file filename)]
-    (when (.exists file)
+    (when (and (.exists file)
+               (< 0 (.length file)))
       (read-string (slurp file)))))
 
 (def money-events-filename "events.txt")
