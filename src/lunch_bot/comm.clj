@@ -1,5 +1,8 @@
 (ns lunch-bot.comm
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clj-time.core :as tc]
+            [clj-time.format :as tf]))
+
 
 
 ;;
@@ -28,16 +31,13 @@
 
 
 
-(defn word->user-id
-  [word]
-  (when-let [[_ user-id] (re-find #"<@(U\w+)(?:\|\w+)?>" word)]
-    user-id))
-
-
-(def command-keyword-strs ["paid" "bought" "cost" "show"])
+(def command-keyword-strs ["paid" "bought" "cost" "show" "undo"])
 
 (def noun-strs ["balances" "payoffs" "events"])
 
+(def filler-strs ["lunch" "for" "i" "my"])
+
+(def relative-date-strs ["today" "yesterday"])
 
 (defn word->keyword
   [word keyword-strs]
@@ -45,15 +45,23 @@
     (when-let [keyword-str (some #(when (.startsWith % lword) %) keyword-strs)]
       (keyword keyword-str))))
 
-
 (defn word->command-keyword
   [word]
   (word->keyword word command-keyword-strs))
+
+(defn word->user-id
+  [word]
+  (when-let [[_ user-id] (re-find #"<@(U\w+)(?:\|\w+)?>" word)]
+    user-id))
 
 (defn word->noun
   [word]
   (word->keyword word noun-strs))
 
+(defn filler?
+  [word]
+  (let [lword (.toLowerCase word)]
+    (some #(.startsWith % lword) filler-strs)))
 
 (defn word->amount
   [word]
@@ -64,43 +72,122 @@
         (str/replace #",|\$" "")
         (BigDecimal.))))
 
+(def date-formatter
+  (tf/formatter (tc/default-time-zone) "YYYYMMdd" "YYYY-MM-dd" "YYYY/MM/dd"))
+
+(defn word->relative-date
+  [word]
+  (word->keyword word relative-date-strs))
+
+(defn relative-date->date
+  [relative-date]
+  (case relative-date
+    :today (tc/today)
+    :yesterday (tc/minus (tc/today) (tc/days 1))            ; for some reason, tc/yesterday has a time
+    :default nil))
+
+(defn word->date
+  [word]
+  (if-let [relative-date (word->relative-date word)]
+    (relative-date->date relative-date)
+    #_(try
+      (tf/parse date-formatter word)
+      (catch IllegalArgumentException ex
+        nil))))
 
 (defn word->command-element
   [word]
-  (let [cmd-keyword (word->command-keyword word)]
-    (cond cmd-keyword cmd-keyword
-          (word->noun word) :noun
-          (word->user-id word) :user
-          (word->amount word) :amount)))
+  (if-let [cmd-keyword (word->command-keyword word)]
+    [cmd-keyword cmd-keyword]
+    (if-let [noun (word->noun word)]
+      [:noun noun]
+      (if-let [user-id (word->user-id word)]
+        [:user user-id]
+        (if-let [amount (word->amount word)]
+          [:amount amount]
+          (if-let [date (word->date word)]
+            [:date date]
+            (if (filler? word)
+              [:filler word]
+              nil)))))))
 
 
-(defmulti command-template->func identity)
+(defn remove-filler
+  [command-template]
+  (filter #(not (= (first %) :filler)) command-template))
+
+
+(defn command-template->key
+  [template]
+  (map #(first %) template))
+
+
+(defmulti command-template->func command-template->key)
 
 (defmethod command-template->func :default [_]
   nil)
 
-(defmethod command-template->func [:paid :user :amount] [_]
-  (fn [words commander]
+(defmethod command-template->func [:noun]
+  [[[_ noun]]]
+  (fn [_]
+    {:command-type :show
+     :info-type    noun}))
+
+(defmethod command-template->func [:paid :user :amount]
+  [[[_ event-type] [_ user-id] [_ amount]]]
+  (fn [commander]
     {:command-type :event
      :event        {:person commander
-                    :type   :paid
-                    :amount (word->amount (nth words 2))
-                    :to     (word->user-id (nth words 1))}}))
+                    :type   event-type
+                    :amount amount
+                    :to     user-id
+                    :on     (relative-date->date :today)}}))
 
-;; TODO: (defmethod command-template->func [:paid :amount :user])
+(defmethod command-template->func [:paid :amount :user]
+  [[event-elem amount-elem user-elem]]
+  (command-template->func [event-elem user-elem amount-elem]))
 
-(defmethod command-template->func [:noun] [_]
-  (fn [words _]
-    {:command-type :show
-     :info-type    (word->noun (first words))}))
+(defmethod command-template->func [:bought :date :amount]
+  [[[_ event-type] [_ date] [_ amount]]]
+  (fn [commander]
+    {:command-type :event
+     :event        {:person commander
+                    :type   event-type
+                    :amount amount
+                    :on     date}}))
+
+(defmethod command-template->func [:bought :amount :date]
+  [[event-elem amount-elem date-elem]]
+  (command-template->func [event-elem date-elem amount-elem]))
+
+(defmethod command-template->func [:bought :amount]
+  [[event-elem amount-elem]]
+  (command-template->func [event-elem [:date (relative-date->date :today)] amount-elem]))
+
+(defmethod command-template->func [:cost :date :amount]
+  [[[_ event-type] [_ date] [_ amount]]]
+  (fn [commander]
+    {:command-type :event
+     :event        {:person commander
+                    :type   event-type
+                    :amount amount
+                    :on     date}}))
+
+(defmethod command-template->func [:cost :amount :date]
+  [[event-elem amount-elem date-elem]]
+  (command-template->func [event-elem date-elem amount-elem]))
+
+(defmethod command-template->func [:cost :amount]
+  [[event-elem amount-elem]]
+  (command-template->func [event-elem [:date (relative-date->date :today)] amount-elem]))
 
 
 (defn text->command-func
   [text]
   (let [words (str/split text #" +")
-        command-template (map #(word->command-element %) words)]
-    (when-let [cmd-func (command-template->func command-template)]
-      (fn [commander] (cmd-func words commander)))))
+        cmd-template (map #(word->command-element %) words)
+        clean-cmd-template (remove-filler cmd-template)]
+    (command-template->func clean-cmd-template)))
 
 
 (defn message->command
