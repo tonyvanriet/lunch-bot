@@ -74,24 +74,25 @@
           (word->amount word) :amount)))
 
 
-(defn command-template->func
-  [command-template]
-  (cond
+(defmulti command-template->func identity)
 
-    (= command-template [:paid :user :amount])
-    (fn [words commander]
-      {:command-type :event
-       :event        {:person commander
-                      :type   :paid
-                      :amount (word->amount (nth words 2))
-                      :to     (word->user-id (nth words 1))}})
+(defmethod command-template->func :default [_]
+  nil)
 
-    ;; TODO: (= command-template [:paid :amount :user])
+(defmethod command-template->func [:paid :user :amount] [_]
+  (fn [words commander]
+    {:command-type :event
+     :event        {:person commander
+                    :type   :paid
+                    :amount (word->amount (nth words 2))
+                    :to     (word->user-id (nth words 1))}}))
 
-    (= command-template [:noun])
-    (fn [words _]
-      {:command-type :show
-       :info-type    (word->noun (first words))})))
+;; TODO: (defmethod command-template->func [:paid :amount :user])
+
+(defmethod command-template->func [:noun] [_]
+  (fn [words _]
+    {:command-type :show
+     :info-type    (word->noun (first words))}))
 
 
 (defn text->command-func
