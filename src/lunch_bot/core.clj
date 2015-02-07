@@ -22,15 +22,23 @@
   (swap! money-events (fn [_] (store/read-events money-events-filename))))
 
 
+(defn get-channel-command-signature []
+  "generates a regex that will match against a channel message that should
+  be interpreted as a command, and captures the command text from the message."
+  (let [linkified-self (tx/linkify (state/self-id))]
+    (str linkified-self ":? *(.*)")))
+
+
 (defn message->command-text
   "determines if the message should be interpreted as a command, and if so, returns
   the command text from the message."
   [channel-id text]
   (if (state/dm? channel-id)
     text
-    (let [linkified-self (tx/linkify (state/self-id))]
-      (when-let [[_ cmd-text] (re-find (re-pattern (str linkified-self ":? *(.*)")) text)]
-        cmd-text))))
+    (when-let [[_ cmd-text] (-> (get-channel-command-signature)
+                                (re-pattern)
+                                (re-find text))]
+      cmd-text)))
 
 
 (defmulti handle-command :command-type)
