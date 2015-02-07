@@ -1,4 +1,4 @@
-(ns lunch-bot.comm
+(ns lunch-bot.command
   (:require [clojure.string :as str]
             [clj-time.core :as tc]
             [clj-time.format :as tf]))

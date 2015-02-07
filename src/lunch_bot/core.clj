@@ -2,41 +2,24 @@
   (:gen-class)
   (:require
     [lunch-bot
-     [comm :as comm]
-     [money :as money]]
+     [command :as comm]
+     [money :as money]
+     [talk :as talk]
+     [store :as store]]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
-     [rtm-transmit :as tx]]
-    [clojure.pprint :refer [pprint]]
-    [clojure.java.io :as io]
-    [clojure.string :as string]))
+     [rtm-transmit :as tx]]))
 
 
-(def api-token-filename "api-token.txt")
-
-(defn get-api-token-from-file
-  [filename]
-  (let [file (io/file filename)]
-    (if (.exists file)
-      (string/trim (slurp file))
-      (do (spit filename "your-api-token")
-          (println "put your api token in" filename)))))
-
-
-(def ^:private money-events (atom nil))
-
-(defn get-money-events-from-file
-  [filename]
-  (let [file (io/file filename)]
-    (when (and (.exists file)
-               (< 0 (.length file)))
-      (read-string (slurp file)))))
+(def api-token-filename "abot-api-token.txt")
 
 (def money-events-filename "events.txt")
 
+(def ^:private money-events (atom nil))
+
 (defn initialize-money-events []
-  (swap! money-events (fn [_] (get-money-events-from-file money-events-filename))))
+  (swap! money-events (fn [_] (store/read-events money-events-filename))))
 
 
 (defn message->command-text
@@ -50,34 +33,6 @@
         cmd-text))))
 
 
-(defn pstr
-  [object]
-  (with-out-str (pprint object)))
-
-
-(defn balances->str [balances]
-  (pstr (map (fn [bal]
-               (str (key bal) " " (val bal)))
-             balances)))
-
-(defn payoffs->str
-  [payoffs]
-  (pstr (map (fn [{:keys [person amount to]}]
-               (str person " pays " to " " amount))
-             payoffs)))
-
-(defmulti event->str :type)
-(defmethod event->str :paid [{:keys [person amount to on]}]
-  (str person " paid " to " " amount " on " on))
-(defmethod event->str :bought [{:keys [person amount on]}]
-  (str person " bought lunch for " amount " on " on))
-(defmethod event->str :cost [{:keys [person amount on]}]
-  (str person "'s lunch cost " amount " on " on))
-
-(defn events->str [events]
-  (pstr (map #(event->str %) events)))
-
-
 (defmulti handle-command :command-type)
 
 (defmethod handle-command :unrecognized
@@ -86,25 +41,21 @@
 
 (defmethod handle-command :show
   [{:keys [info-type]}]
-  (cond (= info-type :balances)
-        (->> @money-events
-             (money/events->balances)
-             (balances->str))
-
-        (= info-type :payoffs)
-        (->> @money-events
-             (money/events->balances)
-             (money/minimal-payoffs)
-             (payoffs->str))
-
-        (= info-type :events)
-        (events->str @money-events)))
+  (case info-type
+    :balances (->> @money-events
+                   (money/events->balances)
+                   (talk/balances->str))
+    :payoffs (->> @money-events
+                  (money/events->balances)
+                  (money/minimal-payoffs)
+                  (talk/payoffs->str))
+    :events (talk/events->str @money-events)))
 
 (defmethod handle-command :event
   [{:keys [event]}]
   (swap! money-events (fn [events] (conj events event)))
-  (spit "events.txt" (pprint @money-events))
-  (event->str event))
+  (store/write-events @money-events)
+  (talk/event->str event))
 
 
 (defmulti handle-slack-event :type)
@@ -116,7 +67,7 @@
       (let [cmd (comm/message->command user-id cmd-text)
             cmd-reply (handle-command cmd)]
         (when cmd-reply
-          (tx/say-message channel-id cmd-reply))))))
+          (talk/say-message channel-id cmd-reply))))))
 
 (defmethod handle-slack-event "channel_joined" [event]
   nil)
@@ -137,16 +88,21 @@
   (println "...lunch-bot dying"))
 
 
-(defn start
-  ([]
-    (start (get-api-token-from-file api-token-filename)))
-  ([api-token]
-    (initialize-money-events)
-    (slack/connect api-token handle-slack-event)
-    (println "lunch-bot running...")))
-
 (defn stop []
   (shutdown-app))
+
+(defn start
+  ([]
+    (start (store/read-api-token api-token-filename)))
+  ([api-token]
+    (try
+      (initialize-money-events)
+      (slack/connect api-token handle-slack-event)
+      (prn "lunch-bot running...")
+      (catch Exception ex
+        (println ex)
+        (println "couldn't start lunch-bot")
+        (stop)))))
 
 (defn restart []
   (stop)
