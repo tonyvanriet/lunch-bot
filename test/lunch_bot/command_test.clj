@@ -14,7 +14,7 @@
                                                          :type   :paid
                                                          :amount amount
                                                          :to     recipient
-                                                         :on     (time/today)}}))))
+                                                         :date   (time/today)}}))))
 
 
 (deftest process-command-unrecognized-reply-correct

@@ -21,12 +21,12 @@
              payoffs)))
 
 (defmulti event->str :type)
-(defmethod event->str :paid [{:keys [person amount to on]}]
-  (str person " paid " to " " amount " on " on))
-(defmethod event->str :bought [{:keys [person amount on]}]
-  (str person " bought lunch for " amount " on " on))
-(defmethod event->str :cost [{:keys [person amount on]}]
-  (str person "'s lunch cost " amount " on " on))
+(defmethod event->str :paid [{:keys [person amount to date]}]
+  (str person " paid " to " " amount " on " date))
+(defmethod event->str :bought [{:keys [person amount date]}]
+  (str person " bought lunch for " amount " on " date))
+(defmethod event->str :cost [{:keys [person amount date]}]
+  (str person "'s lunch cost " amount " on " date))
 
 (defn events->str [events]
   (pstr (map #(event->str %) events)))

@@ -3,8 +3,6 @@
             [clj-time.core :as tc]
             [clj-time.format :as tf]))
 
-
-
 ;;
 ;; Parsing user commands
 ;;
@@ -28,8 +26,6 @@
 ;;   could recognize partial command templates give the user an error
 ;;   message indicating the unrecognized parts.
 ;;
-
-
 
 (def command-keyword-strs ["paid" "bought" "cost" "show" "undo"])
 
@@ -83,7 +79,7 @@
   [relative-date]
   (case relative-date
     :today (tc/today)
-    :yesterday (tc/minus (tc/today) (tc/days 1))            ; for some reason, tc/yesterday has a time
+    :yesterday (tc/minus (tc/today) (tc/days 1))            ; tc/yesterday returns (now - 1 day) as a DateTime
     :default nil))
 
 (defn word->date
@@ -141,7 +137,7 @@
                     :type   event-type
                     :amount amount
                     :to     user-id
-                    :on     (relative-date->date :today)}}))
+                    :date   (relative-date->date :today)}}))
 
 (defmethod command-template->func [:paid :amount :user]
   [[event-elem amount-elem user-elem]]
@@ -154,7 +150,7 @@
      :event        {:person commander
                     :type   event-type
                     :amount amount
-                    :on     date}}))
+                    :date   date}}))
 
 (defmethod command-template->func [:bought :amount :date]
   [[event-elem amount-elem date-elem]]
@@ -171,7 +167,7 @@
      :event        {:person commander
                     :type   event-type
                     :amount amount
-                    :on     date}}))
+                    :date   date}}))
 
 (defmethod command-template->func [:cost :amount :date]
   [[event-elem amount-elem date-elem]]
