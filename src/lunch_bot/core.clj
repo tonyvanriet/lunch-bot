@@ -14,7 +14,8 @@
 
 (def api-token-filename "abot-api-token.txt")
 
-(def money-events-filename "events.txt")
+(def money-events-filename "money-events.edn")
+
 
 (def ^:private money-events (atom nil))
 
@@ -62,7 +63,7 @@
 (defmethod handle-command :event
   [{:keys [event]}]
   (swap! money-events (fn [events] (conj events event)))
-  (store/write-events @money-events)
+  (store/write-events @money-events money-events-filename)
   (talk/event->str event))
 
 
