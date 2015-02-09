@@ -27,7 +27,7 @@
 ;;   message indicating the unrecognized parts.
 ;;
 
-(def command-keyword-strs ["paid" "bought" "cost" "show" "undo"])
+(def action-strs ["paid" "bought" "cost" "show" "undo" "restaurant" "choose" "order" "in" "out"])
 
 (def noun-strs ["balances" "payoffs" "events"])
 
@@ -105,6 +105,20 @@
   []
   (relative-date->date :today))
 
+
+(def ^:private restaurants (atom []))
+(swap! restaurants (fn [_] [{:name "BW3"}
+                            {:name "Chipotle"}
+                            {:name "Binny's"}]))
+
+(defn word->restaurant
+  "returns the first restaurant for which the name starts with the word"
+  [word]
+  (let [lword (.toLowerCase word)]
+    (first (filter #(-> (:name %)
+                        (.toLowerCase)
+                        (.startsWith lword))
+                   @restaurants))))
 
 
 (defn word->all-command-elements
@@ -196,6 +210,12 @@
   [[action-elem amount-elem]]
   (command-template->func [action-elem [:date (get-default-date)] amount-elem]))
 
+(defmethod command-template->func [:choose :restaurant]
+  [[[_ action-type] [_ restaurant]]]
+  (fn [_]
+    {:command-type :order
+     :order        {:type   action-type
+                    :restaurant restaurant}}))
 
 (defn text->command-func
   [text]

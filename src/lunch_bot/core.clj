@@ -9,10 +9,14 @@
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
-     [rtm-transmit :as tx]]))
+     [rtm-transmit :as tx]
+     [web :as web]]))
 
 
 (def api-token-filename "abot-api-token.txt")
+
+(def ^:dynamic *api-token* nil)
+
 
 (def money-events-filename "money-events.edn")
 
@@ -22,6 +26,8 @@
 (defn initialize-money-events []
   (swap! money-events (fn [_] (into [] (store/read-events money-events-filename)))))
 
+
+(defn get-lunch-channel [] (state/name->channel "lunch"))
 
 
 (defn get-channel-command-signature []
@@ -67,6 +73,15 @@
   (store/write-events @money-events money-events-filename)
   (talk/event->str event))
 
+(defmethod handle-command :order
+  [{:keys [order]}]
+  (case (:type order)
+    :choose (let [restaurant (:restaurant order)
+                  channel-id (:id (get-lunch-channel))]
+              (web/channels.setTopic *api-token* channel-id
+                                     (str "ordering " (:name restaurant)))
+              nil)))
+
 
 (defmulti handle-slack-event :type)
 
@@ -107,7 +122,8 @@
   ([api-token]
     (try
       (initialize-money-events)
-      (slack/connect api-token handle-slack-event)
+      (alter-var-root (var *api-token*) (fn [_] api-token))
+      (slack/connect *api-token* handle-slack-event)
       (prn "lunch-bot running...")
       (catch Exception ex
         (println ex)
