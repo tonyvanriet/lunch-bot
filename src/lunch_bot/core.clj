@@ -16,11 +16,12 @@
 
 (def money-events-filename "money-events.edn")
 
+(def ^:private money-events (atom []))
 
-(def ^:private money-events (atom nil))
 
 (defn initialize-money-events []
-  (swap! money-events (fn [_] (store/read-events money-events-filename))))
+  (swap! money-events (fn [_] (into [] (store/read-events money-events-filename)))))
+
 
 
 (defn get-channel-command-signature []
