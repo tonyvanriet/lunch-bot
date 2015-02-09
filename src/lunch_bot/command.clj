@@ -35,15 +35,23 @@
 
 (def relative-date-strs ["today" "yesterday"])
 
-(defn word->keyword
-  [word keyword-strs]
-  (let [lword (.toLowerCase word)]
-    (when-let [keyword-str (some #(when (.startsWith % lword) %) keyword-strs)]
-      (keyword keyword-str))))
 
-(defn word->command-keyword
+(defn first-starts-with
+  [word strs]
+  (some #(when (.startsWith % word) %) strs))
+
+(defn word->keyword
+  "finds the first str in strs that starts with the word and returns
+  it as a keyword."
+  [word strs]
+  (-> word
+      (.toLowerCase)
+      (first-starts-with strs)
+      (keyword)))
+
+(defn word->action
   [word]
-  (word->keyword word command-keyword-strs))
+  (word->keyword word action-strs))
 
 (defn word->user-id
   [word]
@@ -54,10 +62,12 @@
   [word]
   (word->keyword word noun-strs))
 
-(defn filler?
+(defn word->filler
   [word]
-  (let [lword (.toLowerCase word)]
-    (some #(.startsWith % lword) filler-strs)))
+  (-> word
+      (.toLowerCase)
+      (first-starts-with filler-strs)))
+
 
 (defn word->amount
   [word]
@@ -91,21 +101,30 @@
       (catch IllegalArgumentException ex
         nil))))
 
-(defn word->command-element
+(defn get-default-date
+  []
+  (relative-date->date :today))
+
+
+
+(defn word->all-command-elements
   [word]
-  (if-let [cmd-keyword (word->command-keyword word)]
-    [cmd-keyword cmd-keyword]
-    (if-let [noun (word->noun word)]
-      [:noun noun]
-      (if-let [user-id (word->user-id word)]
-        [:user user-id]
-        (if-let [amount (word->amount word)]
-          [:amount amount]
-          (if-let [date (word->date word)]
-            [:date date]
-            (if (filler? word)
-              [:filler word]
-              nil)))))))
+  (let [action-keyword (word->action word)]
+    [[action-keyword action-keyword]
+     [:noun (word->noun word)]
+     [:user (word->user-id word)]
+     [:amount (word->amount word)]
+     [:date (word->date word)]
+     [:restaurant (word->restaurant word)]
+     [:filler (word->filler word)]]))
+
+
+(defn word->command-element
+  "tries to interpret the word as all possible command elements
+  and then picks a winner"
+  [word]
+  (let [all-elements (word->all-command-elements word)]
+    (first (filter second all-elements))))
 
 
 (defn remove-filler
@@ -113,12 +132,12 @@
   (filter #(not (= (first %) :filler)) command-template))
 
 
-(defn command-template->key
+(defn command-template->element-keys
   [template]
   (map #(first %) template))
 
 
-(defmulti command-template->func command-template->key)
+(defmulti command-template->func command-template->element-keys)
 
 (defmethod command-template->func :default [_]
   nil)
@@ -130,52 +149,52 @@
      :info-type    noun}))
 
 (defmethod command-template->func [:paid :user :amount]
-  [[[_ event-type] [_ user-id] [_ amount]]]
+  [[[_ action-type] [_ user-id] [_ amount]]]
   (fn [commander]
     {:command-type :event
      :event        {:person commander
-                    :type   event-type
+                    :type   action-type
                     :amount amount
                     :to     user-id
-                    :date   (relative-date->date :today)}}))
+                    :date   (get-default-date)}}))
 
 (defmethod command-template->func [:paid :amount :user]
-  [[event-elem amount-elem user-elem]]
-  (command-template->func [event-elem user-elem amount-elem]))
+  [[action-elem amount-elem user-elem]]
+  (command-template->func [action-elem user-elem amount-elem]))
 
 (defmethod command-template->func [:bought :date :amount]
-  [[[_ event-type] [_ date] [_ amount]]]
+  [[[_ action-type] [_ date] [_ amount]]]
   (fn [commander]
     {:command-type :event
      :event        {:person commander
-                    :type   event-type
+                    :type   action-type
                     :amount amount
                     :date   date}}))
 
 (defmethod command-template->func [:bought :amount :date]
-  [[event-elem amount-elem date-elem]]
-  (command-template->func [event-elem date-elem amount-elem]))
+  [[action-elem amount-elem date-elem]]
+  (command-template->func [action-elem date-elem amount-elem]))
 
 (defmethod command-template->func [:bought :amount]
-  [[event-elem amount-elem]]
-  (command-template->func [event-elem [:date (relative-date->date :today)] amount-elem]))
+  [[action-elem amount-elem]]
+  (command-template->func [action-elem [:date (get-default-date)] amount-elem]))
 
 (defmethod command-template->func [:cost :date :amount]
-  [[[_ event-type] [_ date] [_ amount]]]
+  [[[_ action-type] [_ date] [_ amount]]]
   (fn [commander]
     {:command-type :event
      :event        {:person commander
-                    :type   event-type
+                    :type   action-type
                     :amount amount
                     :date   date}}))
 
 (defmethod command-template->func [:cost :amount :date]
-  [[event-elem amount-elem date-elem]]
-  (command-template->func [event-elem date-elem amount-elem]))
+  [[action-elem amount-elem date-elem]]
+  (command-template->func [action-elem date-elem amount-elem]))
 
 (defmethod command-template->func [:cost :amount]
-  [[event-elem amount-elem]]
-  (command-template->func [event-elem [:date (relative-date->date :today)] amount-elem]))
+  [[action-elem amount-elem]]
+  (command-template->func [action-elem [:date (get-default-date)] amount-elem]))
 
 
 (defn text->command-func

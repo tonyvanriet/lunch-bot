@@ -10,9 +10,7 @@
 
 
 (defn balances->str [balances]
-  (pstr (map (fn [bal]
-               (str (key bal) " " (val bal)))
-             balances)))
+  (pstr (map #(str (key %) " " (val %)) balances)))
 
 (defn payoffs->str
   [payoffs]
