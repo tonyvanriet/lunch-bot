@@ -15,8 +15,8 @@
 
 (defn- date->inst [date] (.toDate date))
 
-(defn- inst->local-date [inst] (org.joda.time.LocalDate. inst))
-(defn- inst->date-time [inst] (org.joda.time.DateTime. inst))
+(defn- inst->local-date [inst] (when inst (org.joda.time.LocalDate. inst)))
+(defn- inst->date-time [inst] (when inst (org.joda.time.DateTime. inst)))
 
 
 (defn- edn->events
