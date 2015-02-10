@@ -1,7 +1,8 @@
 (ns lunch-bot.command
   (:require [clojure.string :as str]
             [clj-time.core :as tc]
-            [clj-time.format :as tf]))
+            [clj-time.format :as tf]
+            [clojure.math.combinatorics :as combo]))
 
 ;;
 ;; Parsing user commands
@@ -121,24 +122,19 @@
                    @restaurants))))
 
 
-(defn word->all-command-elements
+(defn word->command-elements
+  "runs the word through all element parsers and returns all
+  elements with non-nil values"
   [word]
-  (let [action-keyword (word->action word)]
-    [[action-keyword action-keyword]
-     [:noun (word->noun word)]
-     [:user (word->user-id word)]
-     [:amount (word->amount word)]
-     [:date (word->date word)]
-     [:restaurant (word->restaurant word)]
-     [:filler (word->filler word)]]))
-
-
-(defn word->command-element
-  "tries to interpret the word as all possible command elements
-  and then picks a winner"
-  [word]
-  (let [all-elements (word->all-command-elements word)]
-    (first (filter second all-elements))))
+  (let [action-keyword (word->action word)
+        elements [[action-keyword action-keyword]
+                  [:noun (word->noun word)]
+                  [:user (word->user-id word)]
+                  [:amount (word->amount word)]
+                  [:date (word->date word)]
+                  [:restaurant (word->restaurant word)]
+                  [:filler (word->filler word)]]]
+    (filter second elements)))
 
 
 (defn remove-filler
@@ -214,15 +210,23 @@
   [[[_ action-type] [_ restaurant]]]
   (fn [_]
     {:command-type :order
-     :order        {:type   action-type
+     :order        {:type       action-type
                     :restaurant restaurant}}))
+
+
+(defn words->command-templates
+  "returns all valid combinations of command elements for the given words"
+  [words]
+  (let [elements-per-word (map #(word->command-elements %) words)]
+    (apply combo/cartesian-product elements-per-word)))
+
 
 (defn text->command-func
   [text]
   (let [words (str/split text #" +")
-        cmd-template (map #(word->command-element %) words)
-        clean-cmd-template (remove-filler cmd-template)]
-    (command-template->func clean-cmd-template)))
+        cmd-templates (words->command-templates words)
+        clean-cmd-templates (map remove-filler cmd-templates)]
+    (some command-template->func clean-cmd-templates)))
 
 
 (defn message->command
