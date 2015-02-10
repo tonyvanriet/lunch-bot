@@ -13,7 +13,7 @@
      [web :as web]]))
 
 
-(def api-token-filename "abot-api-token.txt")
+(def api-token-filename "api-token.txt")
 
 (def ^:dynamic *api-token* nil)
 
@@ -78,7 +78,7 @@
   (case (:type order)
     :choose (let [restaurant (:restaurant order)
                   channel-id (:id (get-lunch-channel))]
-              (web/channels.setTopic *api-token* channel-id
+              (web/channels-setTopic *api-token* channel-id
                                      (str "ordering " (:name restaurant)))
               nil)))
 
