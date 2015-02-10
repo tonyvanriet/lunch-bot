@@ -13,7 +13,7 @@
           (println "put your api token in" filename)))))
 
 
-(defn- date->inst [date] (.toDate date))
+(defn- date->inst [date] (when date (.toDate date)))
 
 (defn- inst->local-date [inst] (when inst (org.joda.time.LocalDate. inst)))
 (defn- inst->date-time [inst] (when inst (org.joda.time.DateTime. inst)))
