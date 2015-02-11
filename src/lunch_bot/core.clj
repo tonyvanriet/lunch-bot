@@ -22,9 +22,11 @@
 
 (def ^:private money-events (atom []))
 
-
 (defn initialize-money-events []
   (swap! money-events (fn [_] (into [] (store/read-events money-events-filename)))))
+
+
+(def ^:private meal-events (atom []))
 
 
 (defn get-lunch-channel [] (state/name->channel "lunch"))
@@ -74,14 +76,15 @@
   (store/write-events @money-events money-events-filename)
   (talk/event->str event))
 
-(defmethod handle-command :order
-  [{:keys [order]}]
-  (case (:type order)
-    :choose (let [restaurant (:restaurant order)
-                  channel-id (:id (get-lunch-channel))]
-              (web/channels-setTopic *api-token* channel-id
-                                     (str "ordering " (:name restaurant)))
-              nil)))
+(defmethod handle-command :meal-event
+  [{:keys [meal-event]}]
+  (swap! meal-events (fn [events] (conj events meal-event)))
+  (when (= (:type meal-event) :choose)
+    (let [restaurant (:restaurant meal-event)
+          channel-id (:id (get-lunch-channel))]
+      (web/channels-setTopic *api-token* channel-id
+                             (str "ordering " (:name restaurant)))))
+  (talk/meal-event->str meal-event))
 
 
 (defmulti handle-slack-event #(vector (:type %) (:subtype %)))

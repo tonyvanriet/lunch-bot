@@ -32,7 +32,7 @@
 
 (def noun-strs ["balances" "payoffs" "events"])
 
-(def filler-strs ["lunch" "for" "i" "my"])
+(def filler-strs ["lunch" "for" "i" "my" "i'm"])
 
 (def relative-date-strs ["today" "yesterday"])
 
@@ -102,7 +102,12 @@
       (catch IllegalArgumentException ex
         nil))))
 
-(defn get-default-date
+(defn word->food
+  [word]
+  word)
+
+
+(defn get-today
   []
   (relative-date->date :today))
 
@@ -133,6 +138,7 @@
                   [:amount (word->amount word)]
                   [:date (word->date word)]
                   [:restaurant (word->restaurant word)]
+                  [:food (word->food word)]
                   [:filler (word->filler word)]]]
     (filter second elements)))
 
@@ -140,6 +146,19 @@
 (defn remove-filler
   [command-template]
   (filter #(not (= (first %) :filler)) command-template))
+
+
+(defn merge-food-elements
+  "combine consecutive food elements into a single element"
+  [command-template]
+  (reduce (fn [template element]
+            (if (= :food (first (last template)) (first element))
+              (let [last-food (second (last template))
+                    next-food (second element)]
+                (conj (vec (butlast template)) [:food (str last-food " " next-food)]))
+              (conj template element)))
+          []
+          command-template))
 
 
 (defn command-template->element-keys
@@ -166,7 +185,7 @@
                     :type   action-type
                     :amount amount
                     :to     user-id
-                    :date   (get-default-date)}}))
+                    :date   (get-today)}}))
 
 (defmethod command-template->func [:paid :amount :user]
   [[action-elem amount-elem user-elem]]
@@ -187,7 +206,7 @@
 
 (defmethod command-template->func [:bought :amount]
   [[action-elem amount-elem]]
-  (command-template->func [action-elem [:date (get-default-date)] amount-elem]))
+  (command-template->func [action-elem [:date (get-today)] amount-elem]))
 
 (defmethod command-template->func [:cost :date :amount]
   [[[_ action-type] [_ date] [_ amount]]]
@@ -204,14 +223,40 @@
 
 (defmethod command-template->func [:cost :amount]
   [[action-elem amount-elem]]
-  (command-template->func [action-elem [:date (get-default-date)] amount-elem]))
+  (command-template->func [action-elem [:date (get-today)] amount-elem]))
 
 (defmethod command-template->func [:choose :restaurant]
   [[[_ action-type] [_ restaurant]]]
   (fn [_]
-    {:command-type :order
-     :order        {:type       action-type
-                    :restaurant restaurant}}))
+    {:command-type :meal-event
+     :meal-event   {:type       action-type
+                    :restaurant restaurant
+                    :date       (get-today)}}))
+
+(defmethod command-template->func [:in]
+  [[[_ action-type]]]
+  (fn [commander]
+    {:command-type :meal-event
+     :meal-event   {:type   action-type
+                    :person commander
+                    :date   (get-today)}}))
+
+(defmethod command-template->func [:out]
+  [[[_ action-type]]]
+  (fn [commander]
+    {:command-type :meal-event
+     :meal-event   {:type   action-type
+                    :person commander
+                    :date   (get-today)}}))
+
+(defmethod command-template->func [:order :food]
+  [[[_ action-type] [_ food]]]
+  (fn [commander]
+    {:command-type :meal-event
+     :meal-event   {:type   action-type
+                    :person commander
+                    :food   food
+                    :date   (get-today)}}))
 
 
 (defn words->command-templates
@@ -223,10 +268,12 @@
 
 (defn text->command-func
   [text]
-  (let [words (str/split text #" +")
-        cmd-templates (words->command-templates words)
-        clean-cmd-templates (map remove-filler cmd-templates)]
-    (some command-template->func clean-cmd-templates)))
+  (let [words (str/split text #" +")]
+    (->> words
+         (words->command-templates)
+         (map remove-filler)
+         (map merge-food-elements)
+         (some command-template->func))))
 
 
 (defn message->command

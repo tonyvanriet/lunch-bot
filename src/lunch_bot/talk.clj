@@ -30,6 +30,20 @@
   (pstr (map #(event->str %) events)))
 
 
+(defmulti meal-event->str :type)
+(defmethod meal-event->str :choose [{:keys [restaurant]}]
+  nil)
+(defmethod meal-event->str :in [{:keys [person]}]
+  (str person "'s hungry!"))
+(defmethod meal-event->str :out [{:keys [person]}]
+  (str person "'s out"))
+(defmethod meal-event->str :order [{:keys [person food]}]
+  (str person " wants " food))
+
+(defn meal-events->str [meal-events]
+  (pstr (map #(meal-event->str %) meal-events)))
+
+
 (defn say-message
   [channel-id message]
   (tx/say-message channel-id message))
