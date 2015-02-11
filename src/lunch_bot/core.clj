@@ -84,9 +84,9 @@
               nil)))
 
 
-(defmulti handle-slack-event :type)
+(defmulti handle-slack-event #(vector (:type %) (:subtype %)))
 
-(defmethod handle-slack-event "message"
+(defmethod handle-slack-event ["message" nil]
   [{channel-id :channel, user-id :user, text :text}]
   (when (not (state/bot? user-id))
     (when-let [cmd-text (message->command-text channel-id text)]
@@ -95,10 +95,17 @@
         (when cmd-reply
           (talk/say-message channel-id cmd-reply))))))
 
-(defmethod handle-slack-event "channel_joined" [event]
+(defmethod handle-slack-event ["message" "message_changed"]
+  [{channel-id :channel, {user-id :user, text :text} :message}]
+    (when (message->command-text channel-id text)
+      (talk/say-message channel-id "I can't handle edited messages... yet")))
+
+(defmethod handle-slack-event ["channel_joined" nil]
+  [event]
   nil)
 
-(defmethod handle-slack-event :default [event]
+(defmethod handle-slack-event :default
+  [event]
   nil)
 
 
