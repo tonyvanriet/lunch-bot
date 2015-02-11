@@ -41,12 +41,13 @@
   "determines if the message should be interpreted as a command, and if so, returns
   the command text from the message."
   [channel-id text]
-  (if (state/dm? channel-id)
-    text
-    (when-let [[_ cmd-text] (-> (get-channel-command-signature)
-                                (re-pattern)
-                                (re-find text))]
-      cmd-text)))
+  (when text
+    (if (state/dm? channel-id)
+      text
+      (when-let [[_ cmd-text] (-> (get-channel-command-signature)
+                                  (re-pattern)
+                                  (re-find text))]
+        cmd-text))))
 
 
 (defmulti handle-command :command-type)
