@@ -68,7 +68,8 @@
                   (money/events->balances)
                   (money/minimal-payoffs)
                   (talk/payoffs->str))
-    :events (talk/events->str @money-events)))
+    :events (talk/events->str @money-events)
+    :today (talk/today-summary @meal-events)))
 
 (defmethod handle-command :event
   [{:keys [event]}]

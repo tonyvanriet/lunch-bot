@@ -30,7 +30,7 @@
 
 (def action-strs ["paid" "bought" "cost" "show" "undo" "restaurant" "choose" "order" "in" "out"])
 
-(def noun-strs ["balances" "payoffs" "events"])
+(def noun-strs ["balances" "payoffs" "events" "today"])
 
 (def filler-strs ["lunch" "for" "i" "my" "i'm"])
 
