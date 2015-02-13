@@ -101,7 +101,8 @@
 (defmethod handle-slack-event ["message" "message_changed"]
   [{channel-id :channel, {user-id :user, text :text} :message}]
   (when (message->command-text channel-id text)
-    (talk/say-message channel-id "I can't handle edited messages... yet")))
+    ; TODO handle edited messages
+    (talk/say-message channel-id "huh?")))
 
 (defmethod handle-slack-event ["channel_joined" nil]
   [event]
