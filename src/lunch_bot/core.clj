@@ -74,7 +74,7 @@
   [{:keys [event]}]
   (swap! money-events (fn [events] (conj events event)))
   (store/write-events @money-events money-events-filename)
-  (talk/event->str event))
+  (talk/event->reply-str event))
 
 (defmethod handle-command :meal-event
   [{:keys [meal-event]}]
@@ -84,7 +84,7 @@
           channel-id (:id (get-lunch-channel))]
       (web/channels-setTopic *api-token* channel-id
                              (str "ordering " (:name restaurant)))))
-  (talk/meal-event->str meal-event))
+  (talk/event->reply-str meal-event))
 
 
 (defmulti handle-slack-event #(vector (:type %) (:subtype %)))
