@@ -10,7 +10,7 @@
 ;; the input string is broken into words.
 ;; each word is classified as a particular kind of command element.
 ;; command elements can be:
-;;   specific keywords (:paid, :bought, :cost, :balances, :payoffs, :events)
+;;   specific keywords (:paid, :bought, :cost, :balances, :payoffs, :history)
 ;;   the target of a keyword (:user, :restaurant)
 ;;   amount (:amount)
 ;;   date (:date)
@@ -30,7 +30,7 @@
 
 (def action-strs ["paid" "bought" "cost" "show" "undo" "restaurant" "choose" "order" "in" "out"])
 
-(def noun-strs ["balances" "payoffs" "events" "today"])
+(def noun-strs ["balances" "payoffs" "history" "today"])
 
 (def filler-strs ["lunch" "for" "i" "my" "i'm"])
 
@@ -257,6 +257,23 @@
                     :person commander
                     :food   food
                     :date   (get-today)}}))
+
+
+; todo change 'events' to 'history'
+; todo remove 'payoffs'
+; todo recognize exact name match without @
+; todo 'who should i pay?' recommend paying all of your debt to the person with the highest balance
+; todo 'order food food\nfood food'
+; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
+; todo ‘order usual’ - usual defaults to most recent order, or user setting
+; todo 'usual food food food' - set usual for chosen restaurant
+; todo 'today shows aggregate summary of the day's meal events
+; todo 'yesterday', 'monday', 'last thursday', 'this week', '1/28'
+; todo 'add superdawg' or 'restaurant superdawg' - create restaurant
+; todo 'add superdawg http://www.superdawg.com/menu.cfm 773-763-0660'
+; todo 'superdawg 7737630660 http://www.superdawg.com/menu.cfm' - update restaurant
+; todo restaurant name links to url
+; todo 'remove superdog', 'rename superdog superdawg'
 
 
 (defn words->command-templates
