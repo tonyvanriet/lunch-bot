@@ -1,9 +1,11 @@
 (ns lunch-bot.command
-  (:require [clojure.string :as str]
-            [clj-time.core :as tc]
-            [clj-time.format :as tf]
-            [clojure.math.combinatorics :as combo]
-            [clj-slack-client.team-state :as team]))
+  (:require
+    [lunch-bot.command.parse :as parse]
+    [lunch-bot.command.template :as template]
+    [clj-slack-client.rtm-transmit :as tx]
+    [clj-slack-client.team-state :as state]
+    [clojure.string :as str]
+    [clojure.math.combinatorics :as combo]))
 
 ;;
 ;; Parsing user commands
@@ -29,104 +31,25 @@
 ;;   message indicating the unrecognized parts.
 ;;
 
-(def action-strs ["paid" "bought" "cost" "show" "undo" "restaurant" "choose" "order" "in" "out"])
 
-(def noun-strs ["balances" "pay?" "payoffs" "history" "today"])
-
-(def filler-strs ["lunch" "for" "i" "my" "i'm"])
-
-(def relative-date-strs ["today" "yesterday"])
-
-
-(defn first-starts-with
-  [word strs]
-  (some #(when (.startsWith % word) %) strs))
-
-(defn word->keyword
-  "finds the first str in strs that starts with the word and returns
-  it as a keyword."
-  [word strs]
-  (-> word
-      (.toLowerCase)
-      (first-starts-with strs)
-      (keyword)))
-
-(defn word->action
-  [word]
-  (word->keyword word action-strs))
-
-(defn word->user-id
-  [word]
-  (if-let [[_ user-id] (re-find #"<@(U\w+)(?:\|\w+)?>" word)]
-    user-id
-    (team/name->id word)))
-
-(defn word->noun
-  [word]
-  (word->keyword word noun-strs))
-
-(defn word->filler
-  [word]
-  (-> word
-      (.toLowerCase)
-      (first-starts-with filler-strs)))
+(defn get-channel-command-signature []
+  "generates a regex that will match against a channel message that should
+  be interpreted as a command, and captures the command text from the message."
+  (let [linkified-self (tx/linkify (state/self-id))]
+    (str linkified-self ":? *(.*)")))
 
 
-(defn word->amount
-  [word]
-  ;; regex is a modified version of this answer on SO
-  ;; http://stackoverflow.com/questions/354044/what-is-the-best-u-s-currency-regex
-  (when-let [[_ amount-str] (re-find #"^([+-]?\$?([0-9]{1,3}(?:,?[0-9]{3})*|[0-9]*)(?:\.[0-9]{1,2})?)$" word)]
-    (-> amount-str
-        (str/replace #",|\$" "")
-        (BigDecimal.))))
-
-(def date-formatter
-  (tf/formatter (tc/default-time-zone) "YYYYMMdd" "YYYY-MM-dd" "YYYY/MM/dd"))
-
-(defn word->relative-date
-  [word]
-  (word->keyword word relative-date-strs))
-
-(defn relative-date->date
-  [relative-date]
-  (case relative-date
-    :today (tc/today)
-    :yesterday (tc/minus (tc/today) (tc/days 1))            ; tc/yesterday returns (now - 1 day) as a DateTime
-    :default nil))
-
-(defn word->date
-  [word]
-  (if-let [relative-date (word->relative-date word)]
-    (relative-date->date relative-date)
-    #_(try
-      (tf/parse date-formatter word)
-      (catch IllegalArgumentException ex
-        nil))))
-
-(defn word->food
-  [word]
-  word)
-
-
-(defn get-today
-  []
-  (relative-date->date :today))
-
-
-(def ^:private restaurants (atom []))
-(swap! restaurants (fn [_] [{:name "BW3"}
-                            {:name "Chipotle"}
-                            {:name "Binny's"}]))
-
-(defn word->restaurant
-  "returns the first restaurant for which the name starts with the word"
-  [word]
-  (let [lword (.toLowerCase word)]
-    (first (filter #(-> (:name %)
-                        (.toLowerCase)
-                        (.startsWith lword))
-                   @restaurants))))
+(defn message->command-text
+  "determines if the message should be interpreted as a command, and if so, returns
+  the command text from the message."
+  [channel-id text]
+  (when text
+    (if (state/dm? channel-id)
+      text
+      (when-let [[_ cmd-text] (-> (get-channel-command-signature)
+                                  (re-pattern)
+                                  (re-find text))]
+        cmd-text))))
 
 
 (defn word->command-elements
@@ -134,15 +57,15 @@
   elements with non-nil values"
   [word]
   (let [trimmed-word (str/trim word)
-        action-keyword (word->action trimmed-word)
+        action-keyword (parse/word->action trimmed-word)
         elements [[action-keyword action-keyword]
-                  [:noun (word->noun trimmed-word)]
-                  [:user (word->user-id trimmed-word)]
-                  [:amount (word->amount trimmed-word)]
-                  [:date (word->date trimmed-word)]
-                  [:restaurant (word->restaurant trimmed-word)]
-                  [:food (word->food word)]
-                  [:filler (word->filler trimmed-word)]]]
+                  [:noun (parse/word->noun trimmed-word)]
+                  [:user (parse/word->user-id trimmed-word)]
+                  [:amount (parse/word->amount trimmed-word)]
+                  [:date (parse/word->date trimmed-word)]
+                  [:restaurant (parse/word->restaurant trimmed-word)]
+                  [:food (parse/word->food word)]
+                  [:filler (parse/word->filler trimmed-word)]]]
     (filter second elements)))
 
 
@@ -164,123 +87,6 @@
           command-template))
 
 
-(defn command-template->element-keys
-  [template]
-  (map #(first %) template))
-
-
-(defmulti command-template->func command-template->element-keys)
-
-(defmethod command-template->func :default [_]
-  nil)
-
-(defmethod command-template->func [:noun]
-  [[[_ noun]]]
-  (fn [commander]
-    {:command-type :show
-     :info-type    noun
-     :requestor    commander}))
-
-(defmethod command-template->func [:paid :user :amount]
-  [[[_ action-type] [_ user-id] [_ amount]]]
-  (fn [commander]
-    {:command-type :event
-     :event        {:person commander
-                    :type   action-type
-                    :amount amount
-                    :to     user-id
-                    :date   (get-today)}}))
-
-(defmethod command-template->func [:paid :amount :user]
-  [[action-elem amount-elem user-elem]]
-  (command-template->func [action-elem user-elem amount-elem]))
-
-(defmethod command-template->func [:bought :date :amount]
-  [[[_ action-type] [_ date] [_ amount]]]
-  (fn [commander]
-    {:command-type :event
-     :event        {:person commander
-                    :type   action-type
-                    :amount amount
-                    :date   date}}))
-
-(defmethod command-template->func [:bought :amount :date]
-  [[action-elem amount-elem date-elem]]
-  (command-template->func [action-elem date-elem amount-elem]))
-
-(defmethod command-template->func [:bought :amount]
-  [[action-elem amount-elem]]
-  (command-template->func [action-elem [:date (get-today)] amount-elem]))
-
-(defmethod command-template->func [:cost :date :amount]
-  [[[_ action-type] [_ date] [_ amount]]]
-  (fn [commander]
-    {:command-type :event
-     :event        {:person commander
-                    :type   action-type
-                    :amount amount
-                    :date   date}}))
-
-(defmethod command-template->func [:cost :amount :date]
-  [[action-elem amount-elem date-elem]]
-  (command-template->func [action-elem date-elem amount-elem]))
-
-(defmethod command-template->func [:cost :amount]
-  [[action-elem amount-elem]]
-  (command-template->func [action-elem [:date (get-today)] amount-elem]))
-
-(defmethod command-template->func [:choose :restaurant]
-  [[[_ action-type] [_ restaurant]]]
-  (fn [_]
-    {:command-type :meal-event
-     :meal-event   {:type       action-type
-                    :restaurant restaurant
-                    :date       (get-today)}}))
-
-(defmethod command-template->func [:in]
-  [[[_ action-type]]]
-  (fn [commander]
-    {:command-type :meal-event
-     :meal-event   {:type   action-type
-                    :person commander
-                    :date   (get-today)}}))
-
-(defmethod command-template->func [:out]
-  [[[_ action-type]]]
-  (fn [commander]
-    {:command-type :meal-event
-     :meal-event   {:type   action-type
-                    :person commander
-                    :date   (get-today)}}))
-
-(defmethod command-template->func [:order :food]
-  [[[_ action-type] [_ food]]]
-  (fn [commander]
-    {:command-type :meal-event
-     :meal-event   {:type   action-type
-                    :person commander
-                    :food   food
-                    :date   (get-today)}}))
-
-
-; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
-; todo ‘order usual’ - usual defaults to most recent order, or user setting
-; todo 'usual food food food' - set usual for chosen restaurant
-; todo 'today shows aggregate summary of the day's meal events
-; todo 'yesterday', 'monday', 'last thursday', 'this week', '1/28'
-; todo 'add superdawg' or 'restaurant superdawg' - create restaurant
-; todo 'add superdawg http://www.superdawg.com/menu.cfm 773-763-0660'
-; todo 'superdawg 7737630660 http://www.superdawg.com/menu.cfm' - update restaurant
-; todo 'bw3 thursday'
-; todo restaurant name links to url
-; todo 'remove superdog', 'rename superdog superdawg'
-; todo 'payoffs' suggests payments that bring everyone to the average balance, handle balances that don't sum to 0
-; todo recognize 'steve paid carla 23' for privileged users
-; todo talk converts person's name to "you" in DMs
-; todo attempt to interpret multi-line messages as one command per line
-; todo lunchbot suggests a restaurant based on history for day of week, or at random
-
-
 (defn words->command-templates
   "returns all valid combinations of command elements for the given words"
   [words]
@@ -288,20 +94,13 @@
     (apply combo/cartesian-product elements-per-word)))
 
 
-(defn text->words
-  [text]
-  (-> text
-      (str/replace "\n" "\n ")
-      (str/split #" +")))
-
-
 (defn text->command-func
   [text]
-    (->> (text->words text)
-         (words->command-templates)
-         (map remove-filler)
-         (map merge-food-elements)
-         (some command-template->func)))
+  (->> (parse/text->words text)
+       (words->command-templates)
+       (map remove-filler)
+       (map merge-food-elements)
+       (some template/command-template->func)))
 
 
 (defn message->command

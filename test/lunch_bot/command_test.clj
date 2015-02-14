@@ -1,6 +1,7 @@
 (ns lunch-bot.command-test
   (:require [clojure.test :refer :all]
             [lunch-bot.command :refer :all]
+            [lunch-bot.command.parse :refer :all]
             [clj-time.core :as time]))
 
 

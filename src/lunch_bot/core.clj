@@ -2,14 +2,13 @@
   (:gen-class)
   (:require
     [lunch-bot
-     [command :as comm]
+     [command :as command]
      [money :as money]
      [talk :as talk]
      [store :as store]]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
-     [rtm-transmit :as tx]
      [web :as web]]))
 
 
@@ -30,26 +29,6 @@
 
 
 (defn get-lunch-channel [] (state/name->channel "lunch"))
-
-
-(defn get-channel-command-signature []
-  "generates a regex that will match against a channel message that should
-  be interpreted as a command, and captures the command text from the message."
-  (let [linkified-self (tx/linkify (state/self-id))]
-    (str linkified-self ":? *(.*)")))
-
-
-(defn message->command-text
-  "determines if the message should be interpreted as a command, and if so, returns
-  the command text from the message."
-  [channel-id text]
-  (when text
-    (if (state/dm? channel-id)
-      text
-      (when-let [[_ cmd-text] (-> (get-channel-command-signature)
-                                  (re-pattern)
-                                  (re-find text))]
-        cmd-text))))
 
 
 (defmulti handle-command :command-type)
@@ -99,16 +78,15 @@
 (defmethod handle-slack-event ["message" nil]
   [{channel-id :channel, user-id :user, text :text}]
   (when (not (state/bot? user-id))
-    (when-let [cmd-text (message->command-text channel-id text)]
-      (let [cmd (comm/message->command user-id cmd-text)
+    (when-let [cmd-text (command/message->command-text channel-id text)]
+      (let [cmd (command/message->command user-id cmd-text)
             cmd-reply (handle-command cmd)]
         (when cmd-reply
           (talk/say-message channel-id cmd-reply))))))
 
 (defmethod handle-slack-event ["message" "message_changed"]
   [{channel-id :channel, {user-id :user, text :text} :message}]
-  (when (message->command-text channel-id text)
-    ; TODO handle edited messages
+  (when (command/message->command-text channel-id text)
     (talk/say-message channel-id "huh?")))
 
 (defmethod handle-slack-event ["channel_joined" nil]
@@ -163,3 +141,22 @@
       (stop)
       (shutdown-agents))))
 
+
+; todo refactor command into parse and
+; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
+; todo ‘order usual’ - usual defaults to most recent order, or user setting
+; todo 'usual food food food' - set usual for chosen restaurant
+; todo 'today shows aggregate summary of the day's meal events
+; todo 'yesterday', 'monday', 'last thursday', 'this week', '1/28'
+; todo 'add superdawg' or 'restaurant superdawg' - create restaurant
+; todo 'add superdawg http://www.superdawg.com/menu.cfm 773-763-0660'
+; todo 'superdawg 7737630660 http://www.superdawg.com/menu.cfm' - update restaurant
+; todo 'bw3 thursday'
+; todo restaurant name links to url
+; todo 'remove superdog', 'rename superdog superdawg'
+; todo 'payoffs' suggests payments that bring everyone to the average balance, handle balances that don't sum to 0
+; todo recognize 'steve paid carla 23' for privileged users
+; todo talk converts person's name to "you" in DMs
+; todo attempt to interpret multi-line messages as one command per line
+; todo lunchbot suggests a restaurant based on history for day of week, or at random
+; todo handle edited messages
