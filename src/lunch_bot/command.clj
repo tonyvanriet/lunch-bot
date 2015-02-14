@@ -133,15 +133,16 @@
   "runs the word through all element parsers and returns all
   elements with non-nil values"
   [word]
-  (let [action-keyword (word->action word)
+  (let [trimmed-word (str/trim word)
+        action-keyword (word->action trimmed-word)
         elements [[action-keyword action-keyword]
-                  [:noun (word->noun word)]
-                  [:user (word->user-id word)]
-                  [:amount (word->amount word)]
-                  [:date (word->date word)]
-                  [:restaurant (word->restaurant word)]
+                  [:noun (word->noun trimmed-word)]
+                  [:user (word->user-id trimmed-word)]
+                  [:amount (word->amount trimmed-word)]
+                  [:date (word->date trimmed-word)]
+                  [:restaurant (word->restaurant trimmed-word)]
                   [:food (word->food word)]
-                  [:filler (word->filler word)]]]
+                  [:filler (word->filler trimmed-word)]]]
     (filter second elements)))
 
 
@@ -262,7 +263,6 @@
                     :date   (get-today)}}))
 
 
-; todo 'order food food\nfood food'
 ; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
 ; todo ‘order usual’ - usual defaults to most recent order, or user setting
 ; todo 'usual food food food' - set usual for chosen restaurant
@@ -271,11 +271,14 @@
 ; todo 'add superdawg' or 'restaurant superdawg' - create restaurant
 ; todo 'add superdawg http://www.superdawg.com/menu.cfm 773-763-0660'
 ; todo 'superdawg 7737630660 http://www.superdawg.com/menu.cfm' - update restaurant
+; todo 'bw3 thursday'
 ; todo restaurant name links to url
 ; todo 'remove superdog', 'rename superdog superdawg'
 ; todo 'payoffs' suggests payments that bring everyone to the average balance, handle balances that don't sum to 0
 ; todo recognize 'steve paid carla 23' for privileged users
 ; todo talk converts person's name to "you" in DMs
+; todo attempt to interpret multi-line messages as one command per line
+; todo lunchbot suggests a restaurant based on history for day of week, or at random
 
 
 (defn words->command-templates
@@ -285,14 +288,20 @@
     (apply combo/cartesian-product elements-per-word)))
 
 
+(defn text->words
+  [text]
+  (-> text
+      (str/replace "\n" "\n ")
+      (str/split #" +")))
+
+
 (defn text->command-func
   [text]
-  (let [words (str/split text #" +")]
-    (->> words
+    (->> (text->words text)
          (words->command-templates)
          (map remove-filler)
          (map merge-food-elements)
-         (some command-template->func))))
+         (some command-template->func)))
 
 
 (defn message->command
