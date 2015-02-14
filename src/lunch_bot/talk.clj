@@ -5,26 +5,29 @@
             [clj-slack-client.team-state :as ts]))
 
 
-(defn pstr
-  "pretty string"
+(defn str-coll
   [object]
-  (with-out-str (pprint object)))
+  (if (coll? object)
+    (->> (map str object)
+         (interpose "\n")
+         (apply str))
+    (str object)))
 
 
 (defn person->str [person] (ts/id->name person))
 
 
 (defn balances->str [balances]
-  (pstr (map #(str (key %) " " (val %)) balances)))
+  (str-coll (map #(str (person->str (key %)) " " (val %)) balances)))
 
 (defn payoffs->str
   [payoffs]
-  (pstr (map (fn [{:keys [person amount to]}]
-               (str (person->str person)
-                    " pays "
-                    (person->str to) " "
-                    amount))
-             payoffs)))
+  (str-coll (map (fn [{:keys [person amount to]}]
+                   (str (person->str person)
+                        " pays "
+                        (person->str to) " "
+                        amount))
+                 payoffs)))
 
 
 (defmulti event->str :type)
@@ -54,11 +57,11 @@
   (str (person->str person) "'s out"))
 
 (defmethod event->str :order [{:keys [person food]}]
-  (str person " wants " food))
+  (str (person->str person) " wants " food))
 
 
 (defn events->str [events]
-  (pstr (map #(event->str %) events)))
+  (str-coll (map event->str events)))
 
 
 (defn event->reply-str
