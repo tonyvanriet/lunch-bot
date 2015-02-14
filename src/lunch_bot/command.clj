@@ -2,7 +2,8 @@
   (:require [clojure.string :as str]
             [clj-time.core :as tc]
             [clj-time.format :as tf]
-            [clojure.math.combinatorics :as combo]))
+            [clojure.math.combinatorics :as combo]
+            [clj-slack-client.team-state :as team]))
 
 ;;
 ;; Parsing user commands
@@ -56,8 +57,9 @@
 
 (defn word->user-id
   [word]
-  (when-let [[_ user-id] (re-find #"<@(U\w+)(?:\|\w+)?>" word)]
-    user-id))
+  (if-let [[_ user-id] (re-find #"<@(U\w+)(?:\|\w+)?>" word)]
+    user-id
+    (team/name->id word)))
 
 (defn word->noun
   [word]
@@ -259,10 +261,8 @@
                     :date   (get-today)}}))
 
 
-; todo change 'events' to 'history'
-; todo remove 'payoffs'
-; todo recognize exact name match without @
 ; todo 'who should i pay?' recommend paying all of your debt to the person with the highest balance
+; todo remove 'payoffs'
 ; todo 'order food food\nfood food'
 ; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
 ; todo ‘order usual’ - usual defaults to most recent order, or user setting
