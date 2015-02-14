@@ -59,11 +59,15 @@
   "huh?")
 
 (defmethod handle-command :show
-  [{:keys [info-type]}]
+  [{:keys [info-type requestor]}]
   (case info-type
     :balances (->> @money-events
                    (money/events->balances)
                    (talk/balances->str))
+    :pay? (->> @money-events
+               (money/events->balances)
+               (money/best-payment requestor)
+               (talk/event->str))
     :payoffs (->> @money-events
                   (money/events->balances)
                   (money/minimal-payoffs)

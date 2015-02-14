@@ -11,7 +11,7 @@
 ;; the input string is broken into words.
 ;; each word is classified as a particular kind of command element.
 ;; command elements can be:
-;;   specific keywords (:paid, :bought, :cost, :balances, :payoffs, :history)
+;;   specific keywords (:paid, :bought, :cost, :balances, :pay?, :history)
 ;;   the target of a keyword (:user, :restaurant)
 ;;   amount (:amount)
 ;;   date (:date)
@@ -31,7 +31,7 @@
 
 (def action-strs ["paid" "bought" "cost" "show" "undo" "restaurant" "choose" "order" "in" "out"])
 
-(def noun-strs ["balances" "payoffs" "history" "today"])
+(def noun-strs ["balances" "pay?" "payoffs" "history" "today"])
 
 (def filler-strs ["lunch" "for" "i" "my" "i'm"])
 
@@ -175,9 +175,10 @@
 
 (defmethod command-template->func [:noun]
   [[[_ noun]]]
-  (fn [_]
+  (fn [commander]
     {:command-type :show
-     :info-type    noun}))
+     :info-type    noun
+     :requestor    commander}))
 
 (defmethod command-template->func [:paid :user :amount]
   [[[_ action-type] [_ user-id] [_ amount]]]
@@ -261,8 +262,6 @@
                     :date   (get-today)}}))
 
 
-; todo 'who should i pay?' recommend paying all of your debt to the person with the highest balance
-; todo remove 'payoffs'
 ; todo 'order food food\nfood food'
 ; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
 ; todo ‘order usual’ - usual defaults to most recent order, or user setting
@@ -274,6 +273,9 @@
 ; todo 'superdawg 7737630660 http://www.superdawg.com/menu.cfm' - update restaurant
 ; todo restaurant name links to url
 ; todo 'remove superdog', 'rename superdog superdawg'
+; todo 'payoffs' suggests payments that bring everyone to the average balance, handle balances that don't sum to 0
+; todo recognize 'steve paid carla 23' for privileged users
+; todo talk converts person's name to "you" in DMs
 
 
 (defn words->command-templates

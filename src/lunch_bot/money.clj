@@ -69,6 +69,20 @@
      :to     (key max-balance)}))
 
 
+(defn best-payment
+  "returns the recommended payment to be made by the person to most efficiently
+  bring down the overall debt. returns nil if the person has no debt."
+  [person balances]
+  (let [persons-balance-amount (get balances person)
+        sorted-balances (sort-balances balances)
+        max-balance (last sorted-balances)]
+    (when (< persons-balance-amount 0)
+      {:person person
+       :type   :should-pay
+       :amount persons-balance-amount
+       :to     (key max-balance)})))
+
+
 (defn minimal-payoffs
   "returns a set of payments that could be made to eliminate all debt in the
   shortest number of payments"

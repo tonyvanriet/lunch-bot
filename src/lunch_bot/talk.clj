@@ -29,10 +29,6 @@
 
 (defmulti event->str :type)
 
-(defmethod event->str :paid [{:keys [person amount to date]}]
-  (str (person->str person) " paid " (person->str to) " " amount
-       (when (not= date (time/today)) (str " on " date))))
-
 (defmethod event->str :bought [{:keys [person amount date]}]
   (str (person->str person) " bought lunch for " amount
        (when (not= date (time/today)) (str " on " date))))
@@ -40,6 +36,13 @@
 (defmethod event->str :cost [{:keys [person amount date]}]
   (str (person->str person) "'s lunch cost " amount
        (when (not= date (time/today)) (str " on " date))))
+
+(defmethod event->str :paid [{:keys [person amount to date]}]
+  (str (person->str person) " paid " (person->str to) " " amount
+       (when (not= date (time/today)) (str " on " date))))
+
+(defmethod event->str :should-pay [{:keys [person amount to]}]
+  (str (person->str person) " should pay " (person->str to) " " amount))
 
 (defmethod event->str :choose [{:keys [restaurant]}]
   (str "chose " (:name restaurant)))
@@ -61,7 +64,7 @@
 (defn event->reply-str
   [event]
   (case (:type event)
-    (:paid :bought :cost) (event->str event)
+    (:paid :bought :cost :should-pay) (event->str event)
     :choose nil
     :in (str (rand-nth [":metal:" ":rocket:" ":clap:" ":thumbsup:" ":dancers:"]))
     :out (str (rand-nth [":fu:" ":fire:" ":facepunch:" ":thumbsdown:" ":hankey:"]))
