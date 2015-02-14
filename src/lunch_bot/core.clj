@@ -63,6 +63,8 @@
   (case info-type
     :balances (->> @money-events
                    (money/events->balances)
+                   (money/sort-balances)
+                   (reverse)
                    (talk/balances->str))
     :pay? (->> @money-events
                (money/events->balances)
