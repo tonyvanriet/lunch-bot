@@ -25,7 +25,12 @@
   (swap! money-events (fn [_] (into [] (store/read-events money-events-filename)))))
 
 
+(def meal-events-filename "meal-events.edn")
+
 (def ^:private meal-events (atom []))
+
+(defn initialize-meal-events []
+  (swap! meal-events (fn [_] (into [] (store/read-events meal-events-filename)))))
 
 
 (defn get-lunch-channel [] (state/name->channel "lunch"))
@@ -65,6 +70,7 @@
 (defmethod handle-command :meal-event
   [{:keys [meal-event]}]
   (swap! meal-events (fn [events] (conj events meal-event)))
+  (store/write-events @meal-events meal-events-filename)
   (when (= (:type meal-event) :choose)
     (let [restaurant (:restaurant meal-event)
           channel-id (:id (get-lunch-channel))]
@@ -73,7 +79,7 @@
   (talk/event->reply-str meal-event))
 
 
-(defmulti handle-slack-event #(vector (:type %) (:subtype %)))
+(defmulti handle-slack-event (juxt :type :subtype))
 
 (defmethod handle-slack-event ["message" nil]
   [{channel-id :channel, user-id :user, text :text}]
@@ -119,6 +125,7 @@
   ([api-token]
     (try
       (initialize-money-events)
+      (initialize-meal-events)
       (alter-var-root (var *api-token*) (fn [_] api-token))
       (slack/connect *api-token* handle-slack-event)
       (prn "lunch-bot running...")
@@ -142,7 +149,6 @@
       (shutdown-agents))))
 
 
-; todo refactor command into parse and
 ; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
 ; todo ‘order usual’ - usual defaults to most recent order, or user setting
 ; todo 'usual food food food' - set usual for chosen restaurant
