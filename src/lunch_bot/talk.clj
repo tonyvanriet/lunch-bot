@@ -74,10 +74,12 @@
     :order (str "mmm")))
 
 
+
+
 (defn today-summary
-  [meal-events]
-  (let [todays-events (filter #(= (:date %) (time/today)) meal-events)]
-    (events->str todays-events)))
+  [meal]
+  (str meal))
+
 
 (defn say-message
   [channel-id message]

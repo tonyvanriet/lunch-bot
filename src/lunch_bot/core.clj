@@ -5,11 +5,13 @@
      [command :as command]
      [money :as money]
      [talk :as talk]
-     [store :as store]]
+     [store :as store]
+     [meal :as meal]]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
-     [web :as web]]))
+     [web :as web]]
+    [clj-time.core :as time]))
 
 
 (def api-token-filename "api-token.txt")
@@ -59,7 +61,10 @@
                   (money/minimal-payoffs)
                   (talk/payoffs->str))
     :history (talk/events->str @money-events)
-    :today (talk/today-summary @meal-events)))
+    :today (->> @meal-events
+                (filter #(= (:date %) (time/today)))
+                (meal/events->meal)
+                (talk/today-summary))))
 
 (defmethod handle-command :event
   [{:keys [event]}]
