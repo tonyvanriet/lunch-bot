@@ -12,12 +12,16 @@
 (defmethod command-template->func :default [_]
   nil)
 
-(defmethod command-template->func [:noun]
-  [[[_ noun]]]
+(defmethod command-template->func [:show :noun]
+  [[[_ action-type][_ noun]]]
   (fn [commander]
-    {:command-type :show
+    {:command-type action-type
      :info-type    noun
      :requestor    commander}))
+
+(defmethod command-template->func [:noun]
+  [[noun-elem]]
+  (command-template->func [[:show :show] noun-elem]))
 
 (defmethod command-template->func [:paid :user :amount]
   [[[_ action-type] [_ user-id] [_ amount]]]
