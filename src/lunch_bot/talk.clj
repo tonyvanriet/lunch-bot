@@ -2,7 +2,8 @@
   (:require [clj-slack-client.rtm-transmit :as tx]
             [clojure.pprint :refer [pprint]]
             [clj-time.core :as time]
-            [clj-slack-client.team-state :as ts]))
+            [clj-slack-client.team-state :as ts]
+            [clojure.string :as str]))
 
 
 (defn str-coll
@@ -74,11 +75,33 @@
     :order (str "mmm")))
 
 
+(defn meal->orders-str
+  [meal]
+  (let [people-with-orders (filter #(contains? (val %) :order) (:people meal))]
+    (for [person-with-order people-with-orders
+          :let [person (key person-with-order)
+                order (:order (val person-with-order))
+                order-lines (str/split-lines order)]]
+      (str (person->str person) "\n"
+           (->> order-lines
+                (map #(str ">" % "\n"))
+                (apply str))))))
 
+
+(defn pre-order-summary
+  [meal]
+  (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)]
+    (str (when chosen-restaurant-name (str "Ordering " chosen-restaurant-name "\n"))
+         "\n"
+         (apply str (meal->orders-str meal)))))
+
+(defn post-order-summary
+  [meal]
+  (str meal))
 
 (defn today-summary
   [meal]
-  (str meal))
+  (pre-order-summary meal))
 
 
 (defn say-message
