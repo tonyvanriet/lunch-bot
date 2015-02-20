@@ -13,7 +13,8 @@
       (str/split #" +")))
 
 
-(def action-strs ["paid" "bought" "cost" "show" "undo" "restaurant" "choose" "order" "in" "out"])
+(def action-strs ["paid" "bought" "cost" "undo" "restaurant"
+                  "want" "choose" "order" "in" "out"])
 
 (def noun-strs ["balances" "pay?" "payoffs" "history" "today"])
 

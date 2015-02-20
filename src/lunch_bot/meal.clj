@@ -8,45 +8,38 @@
 ;;
 
 
-(def empty-meal
-  {:ins    #{}
-   :outs   #{}
-   :chosen []})
-
-
 (def example-meal
-  {:ins    #{"bob" "rozz"}
-   :outs   #{"steve"}
-   :chosen [{:restaurant {:name "BW3"}
-             :ins        [{:person "bob"
-                           :order  "jumbo dog\nno hot peppers\nlg fry"
-                           :cost   8.5M}
-                          {:person "rozz"
-                           :order  "bowl of chili"
-                           :cost   9M}
-                          {:person "biff"}]
-             :outs       [{:person "steve"}
-                          {:person "judy"}]
-             :bought     {:person "bob"
-                          :amount 45.75M}}
-            {:restaurant {:name "Portillos"}
-             :ins        [{:person "loner"}]
-             :outs       []}]})
+  {:chosen-restaurant {:name "BW3"}
+   :people            {"bob"  {:status :in
+                               :order  "jumbo dog\nno hot peppers\nlg fry"
+                               :cost   8.5M}
+                       "rozz" {:status :in
+                               :order  "bowl of chili"
+                               :cost   9M}
+                       "biff" {:status :out}}})
 
 
 (defmulti apply-event-to-meal #(:type %2))
 
+(defmethod apply-event-to-meal :want
+  [meal {:keys [person restaurant] :as event}]
+  (assoc-in meal [:people person :wants] restaurant))
+
 (defmethod apply-event-to-meal :in
-  [{:keys [ins outs] :as meal}
-   {:keys [person] :as event}]
-  (assoc meal :ins (conj ins person)
-              :outs (disj outs person)))
+  [meal {:keys [person] :as event}]
+  (assoc-in meal [:people person :status] :in))
 
 (defmethod apply-event-to-meal :out
-  [{:keys [ins outs] :as meal}
-   {:keys [person] :as event}]
-  (assoc meal :outs (conj outs person)
-              :ins (disj ins person)))
+  [meal {:keys [person] :as event}]
+  (assoc-in meal [:people person :status] :out))
+
+(defmethod apply-event-to-meal :choose
+  [meal {:keys [restaurant] :as event}]
+  (assoc-in meal [:chosen-restaurant] restaurant))
+
+(defmethod apply-event-to-meal :order
+  [meal {:keys [person food] :as event}]
+  (assoc-in meal [:people person :order] food))
 
 (defmethod apply-event-to-meal :default
   [meal _]
@@ -57,5 +50,5 @@
   "constructs an aggregate view of the meal for a given day from the
   list of meal-events."
   [events]
-  (reduce apply-event-to-meal empty-meal events))
+  (reduce apply-event-to-meal {} events))
 
