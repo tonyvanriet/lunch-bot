@@ -36,7 +36,7 @@
   "generates a regex that will match against a channel message that should
   be interpreted as a command, and captures the command text from the message."
   (let [linkified-self (tx/linkify (state/self-id))]
-    (str linkified-self ":? *(.*)")))
+    (str linkified-self ":? *(.+)")))
 
 
 (defn message->command-text
