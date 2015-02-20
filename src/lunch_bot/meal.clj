@@ -41,14 +41,21 @@
   [meal {:keys [person food] :as event}]
   (assoc-in meal [:people person :order] food))
 
+(defmethod apply-event-to-meal :bought
+  [meal {:keys [person amount] :as event}]
+  (update-in meal [:people person :bought-amount] (fnil + 0) amount))
+
+(defmethod apply-event-to-meal :cost
+  [meal {:keys [person amount] :as event}]
+  (update-in meal [:people person :cost-amount] (fnil + 0) amount))
+
 (defmethod apply-event-to-meal :default
   [meal _]
   meal)
 
 
 (defn events->meal
-  "constructs an aggregate view of the meal for a given day from the
-  list of meal-events."
+  "constructs an aggregate view of the meal for the given events."
   [events]
   (reduce apply-event-to-meal {} events))
 
