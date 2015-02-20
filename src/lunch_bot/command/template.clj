@@ -13,7 +13,7 @@
   nil)
 
 (defmethod command-template->func [:show :noun]
-  [[[_ action-type][_ noun]]]
+  [[[_ action-type] [_ noun]]]
   (fn [commander]
     {:command-type action-type
      :info-type    noun
@@ -71,35 +71,49 @@
   [[action-elem amount-elem]]
   (command-template->func [action-elem [:date (time/today)] amount-elem]))
 
-(defmethod command-template->func [:choose :restaurant]
-  [[[_ action-type] [_ restaurant]]]
-  (fn [_]
+
+(defn command-func-meal-event
+  [action-type]
+  (fn [commander]
+    {:command-type :meal-event
+     :meal-event   {:type   action-type
+                    :person commander
+                    :date   (time/today)}}))
+
+(defn command-func-meal-event-restaurant
+  [action-type restaurant]
+  (fn [commander]
     {:command-type :meal-event
      :meal-event   {:type       action-type
+                    :person     commander
                     :restaurant restaurant
                     :date       (time/today)}}))
 
-(defmethod command-template->func [:in]
-  [[[_ action-type]]]
-  (fn [commander]
-    {:command-type :meal-event
-     :meal-event   {:type   action-type
-                    :person commander
-                    :date   (time/today)}}))
-
-(defmethod command-template->func [:out]
-  [[[_ action-type]]]
-  (fn [commander]
-    {:command-type :meal-event
-     :meal-event   {:type   action-type
-                    :person commander
-                    :date   (time/today)}}))
-
-(defmethod command-template->func [:order :food]
-  [[[_ action-type] [_ food]]]
+(defn command-func-meal-event-food
+  [action-type food]
   (fn [commander]
     {:command-type :meal-event
      :meal-event   {:type   action-type
                     :person commander
                     :food   food
                     :date   (time/today)}}))
+
+(defmethod command-template->func [:in]
+  [[[_ action-type]]]
+  (command-func-meal-event action-type))
+
+(defmethod command-template->func [:out]
+  [[[_ action-type]]]
+  (command-func-meal-event action-type))
+
+(defmethod command-template->func [:want :restaurant]
+  [[[_ action-type] [_ restaurant]]]
+  (command-func-meal-event-restaurant action-type restaurant))
+
+(defmethod command-template->func [:choose :restaurant]
+  [[[_ action-type] [_ restaurant]]]
+  (command-func-meal-event-restaurant action-type restaurant))
+
+(defmethod command-template->func [:order :food]
+  [[[_ action-type] [_ food]]]
+  (command-func-meal-event-food action-type food))
