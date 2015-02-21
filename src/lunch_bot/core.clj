@@ -128,18 +128,18 @@
 
 (defn start
   ([]
-    (start (store/read-api-token api-token-filename)))
+   (start (store/read-api-token api-token-filename)))
   ([api-token]
-    (try
-      (initialize-money-events)
-      (initialize-meal-events)
-      (alter-var-root (var *api-token*) (fn [_] api-token))
-      (slack/connect *api-token* handle-slack-event)
-      (prn "lunch-bot running...")
-      (catch Exception ex
-        (println ex)
-        (println "couldn't start lunch-bot")
-        (stop)))))
+   (try
+     (initialize-money-events)
+     (initialize-meal-events)
+     (alter-var-root (var *api-token*) (fn [_] api-token))
+     (slack/connect *api-token* handle-slack-event)
+     (prn "lunch-bot running...")
+     (catch Exception ex
+       (println ex)
+       (println "couldn't start lunch-bot")
+       (stop)))))
 
 (defn restart []
   (stop)
