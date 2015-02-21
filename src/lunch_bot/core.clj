@@ -52,10 +52,11 @@
                    (money/sort-balances)
                    (reverse)
                    (talk/balances->str))
-    :pay? (->> @money-events
-               (money/events->balances)
-               (money/best-payment requestor)
-               (talk/event->str))
+    :pay? (if-let [payment (->> @money-events
+                                (money/events->balances)
+                                (money/best-payment requestor))]
+            (talk/event->str payment)
+            (str "keep your money"))
     :payoffs (->> @money-events
                   (money/events->balances)
                   (money/minimal-payoffs)
