@@ -65,6 +65,15 @@
   (str-coll (map event->str events)))
 
 
+(defn recent-money-history [events]
+  (let [min-date (time/minus (time/today) (time/days 7))
+        recent-events (filter #(time/after? (:date %) min-date) events)]
+    (if (seq recent-events)
+      (str "History as of " min-date "\n"
+           (events->str recent-events))
+      (str "No history as of " min-date))))
+
+
 (defn event->reply-str
   [event]
   (case (:type event)

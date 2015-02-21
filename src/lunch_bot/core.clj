@@ -60,7 +60,8 @@
                   (money/events->balances)
                   (money/minimal-payoffs)
                   (talk/payoffs->str))
-    :history (talk/events->str @money-events)
+    :history (->> @money-events
+                  (talk/recent-money-history))
     :today (->> (concat @meal-events @money-events)
                 (filter #(= (:date %) (time/today)))
                 (meal/events->meal)
