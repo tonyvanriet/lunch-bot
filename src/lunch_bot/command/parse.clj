@@ -13,10 +13,10 @@
       (str/split #" +")))
 
 
-(def action-strs ["paid" "bought" "cost" "undo" "restaurant"
+(def action-strs ["paid" "bought" "cost" "undo"
                   "want" "choose" "order" "in" "out"])
 
-(def noun-strs ["balances" "pay?" "payoffs" "history" "today"])
+(def noun-strs ["balances" "pay?" "payoffs" "history" "today" "ordered?"])
 
 (def filler-strs ["lunch" "for" "i" "my" "i'm"])
 

@@ -38,7 +38,17 @@
 (defn get-lunch-channel [] (state/name->channel "lunch"))
 
 
-(defmulti handle-command :command-type)
+(defn build-balances []
+  (money/events->balances @money-events))
+
+(defn build-meals []
+  (meal/events->meals (concat @meal-events @money-events)))
+
+
+(defmulti handle-command
+          "performs the computation specified by the command and returns a
+          reply string, if any."
+          :command-type)
 
 (defmethod handle-command :unrecognized
   [_]
@@ -47,26 +57,27 @@
 (defmethod handle-command :show
   [{:keys [info-type requestor]}]
   (case info-type
-    :balances (->> @money-events
-                   (money/events->balances)
+    :balances (->> (build-balances)
                    (money/sort-balances)
                    (reverse)
                    (talk/balances->str))
-    :pay? (if-let [payment (->> @money-events
-                                (money/events->balances)
-                                (money/best-payment requestor))]
+    :pay? (if-let [payment (money/best-payment requestor (build-balances))]
             (talk/event->str payment)
             (str "keep your money"))
-    :payoffs (->> @money-events
-                  (money/events->balances)
+    :payoffs (->> (build-balances)
                   (money/minimal-payoffs)
                   (talk/payoffs->str))
     :history (->> @money-events
                   (talk/recent-money-history))
-    :today (->> (concat @meal-events @money-events)
-                (filter #(= (:date %) (time/today)))
-                (meal/events->meal)
-                (talk/today-summary))))
+    :today (let [meals (build-meals)
+                 todays-meal (get meals (time/today))]
+             (talk/today-summary todays-meal))
+    :ordered? (let [meals (build-meals)
+                    todays-meal (get meals (time/today))
+                    todays-restaurant-name (-> todays-meal :chosen-restaurant :name)
+                    orders (meal/orders-for-restaurant meals todays-restaurant-name requestor)]
+                (talk/str-coll orders))))
+
 
 (defmethod handle-command :event
   [{:keys [event]}]

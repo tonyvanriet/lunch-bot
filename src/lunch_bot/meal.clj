@@ -19,43 +19,48 @@
                        "biff" {:status :out}}})
 
 
-(defmulti apply-event-to-meal #(:type %2))
+(defmulti apply-event-to-meals #(:type %2))
 
-(defmethod apply-event-to-meal :want
-  [meal {:keys [person restaurant] :as event}]
-  (assoc-in meal [:people person :wants] restaurant))
+(defmethod apply-event-to-meals :want
+  [meal {:keys [date person restaurant] :as event}]
+  (assoc-in meal [date :people person :wants] restaurant))
 
-(defmethod apply-event-to-meal :in
-  [meal {:keys [person] :as event}]
-  (assoc-in meal [:people person :status] :in))
+(defmethod apply-event-to-meals :in
+  [meal {:keys [date person] :as event}]
+  (assoc-in meal [date :people person :status] :in))
 
-(defmethod apply-event-to-meal :out
-  [meal {:keys [person] :as event}]
-  (assoc-in meal [:people person :status] :out))
+(defmethod apply-event-to-meals :out
+  [meal {:keys [date person] :as event}]
+  (assoc-in meal [date :people person :status] :out))
 
-(defmethod apply-event-to-meal :choose
-  [meal {:keys [restaurant] :as event}]
-  (assoc-in meal [:chosen-restaurant] restaurant))
+(defmethod apply-event-to-meals :choose
+  [meal {:keys [date restaurant] :as event}]
+  (assoc-in meal [date :chosen-restaurant] restaurant))
 
-(defmethod apply-event-to-meal :order
-  [meal {:keys [person food] :as event}]
-  (assoc-in meal [:people person :order] food))
+(defmethod apply-event-to-meals :order
+  [meal {:keys [date person food] :as event}]
+  (assoc-in meal [date :people person :order] food))
 
-(defmethod apply-event-to-meal :bought
-  [meal {:keys [person amount] :as event}]
-  (update-in meal [:people person :bought-amount] (fnil + 0) amount))
+(defmethod apply-event-to-meals :bought
+  [meal {:keys [date person amount] :as event}]
+  (update-in meal [date :people person :bought-amount] (fnil + 0) amount))
 
-(defmethod apply-event-to-meal :cost
-  [meal {:keys [person amount] :as event}]
-  (update-in meal [:people person :cost-amount] (fnil + 0) amount))
+(defmethod apply-event-to-meals :cost
+  [meal {:keys [date person amount] :as event}]
+  (update-in meal [date :people person :cost-amount] (fnil + 0) amount))
 
-(defmethod apply-event-to-meal :default
+(defmethod apply-event-to-meals :default
   [meal _]
   meal)
 
 
-(defn events->meal
-  "constructs an aggregate view of the meal for the given events."
+(defn events->meals
+  "constructs an aggregate view of the meal for each day."
   [events]
-  (reduce apply-event-to-meal {} events))
+  (reduce apply-event-to-meals {} events))
 
+
+(defn orders-for-restaurant
+  [meals restaurant-name person]
+  (let [restaurant-meals (filter #(= restaurant-name (-> (val %) :chosen-restaurant :name)) meals)]
+    (map #(get-in (val %) [:people person :order]) restaurant-meals)))
