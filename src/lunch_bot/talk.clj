@@ -113,6 +113,19 @@
   (pre-order-summary meal))
 
 
+(defn person-meal->str
+  [{:keys [order cost] :as meal-order}]
+  (str "```" "order\n"
+       order "\n"
+       (when cost (str "cost " cost))
+       "```\n"))
+
+(defn person-meal-history
+  [person-meals restaurant]
+  (apply str "Latest orders for " (:name restaurant) "\n"
+         (map person-meal->str person-meals)))
+
+
 (defn say-message
   [channel-id message]
   (tx/say-message channel-id message))

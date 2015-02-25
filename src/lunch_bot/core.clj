@@ -42,7 +42,7 @@
   (money/events->balances @money-events))
 
 (defn build-meals []
-  (meal/events->meals (concat @meal-events @money-events)))
+  (meal/events->meals (concat @money-events @meal-events)))
 
 
 (defmulti handle-command
@@ -65,7 +65,7 @@
   [{:keys [requestor]}]
   (if-let [payment (money/best-payment requestor (build-balances))]
     (talk/event->str payment)
-    (str "keep your money")))
+    (str "Keep your money.")))
 
 (defmethod handle-command [:show :payoffs]
   [_]
@@ -87,10 +87,11 @@
 (defmethod handle-command [:show :ordered?]
   [{:keys [requestor]}]
   (let [meals (build-meals)
-        todays-meal (get meals (time/today))
-        todays-restaurant-name (-> todays-meal :chosen-restaurant :name)
-        orders (meal/orders-for-restaurant meals todays-restaurant-name requestor)]
-    (talk/str-coll orders)))
+        todays-meal (get meals (time/today))]
+    (if-let [todays-restaurant (-> todays-meal :chosen-restaurant)]
+      (let [person-meals (meal/person-meal-history meals todays-restaurant requestor)]
+        (talk/person-meal-history person-meals todays-restaurant))
+      (str "Somebody needs to choose a restaurant first."))))
 
 (defmethod handle-command [:event nil]
   [{:keys [event]}]
@@ -180,6 +181,7 @@
       (shutdown-agents))))
 
 
+; todo add timestamp to money and meal-events so they can be sorted after concatenation
 ; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
 ; todo ‘order usual’ - usual defaults to most recent order, or user setting
 ; todo 'usual food food food' - set usual for chosen restaurant
