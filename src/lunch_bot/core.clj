@@ -48,44 +48,57 @@
 (defmulti handle-command
           "performs the computation specified by the command and returns a
           reply string, if any."
-          :command-type)
+          (juxt :command-type :info-type))
 
-(defmethod handle-command :unrecognized
+(defmethod handle-command [:unrecognized nil]
   [_]
   "huh?")
 
-(defmethod handle-command :show
-  [{:keys [info-type requestor]}]
-  (case info-type
-    :balances (->> (build-balances)
-                   (money/sort-balances)
-                   (reverse)
-                   (talk/balances->str))
-    :pay? (if-let [payment (money/best-payment requestor (build-balances))]
-            (talk/event->str payment)
-            (str "keep your money"))
-    :payoffs (->> (build-balances)
-                  (money/minimal-payoffs)
-                  (talk/payoffs->str))
-    :history (->> @money-events
-                  (talk/recent-money-history))
-    :today (let [meals (build-meals)
-                 todays-meal (get meals (time/today))]
-             (talk/today-summary todays-meal))
-    :ordered? (let [meals (build-meals)
-                    todays-meal (get meals (time/today))
-                    todays-restaurant-name (-> todays-meal :chosen-restaurant :name)
-                    orders (meal/orders-for-restaurant meals todays-restaurant-name requestor)]
-                (talk/str-coll orders))))
+(defmethod handle-command [:show :balances]
+  [_]
+  (->> (build-balances)
+       (money/sort-balances)
+       (reverse)
+       (talk/balances->str)))
 
+(defmethod handle-command [:show :pay?]
+  [{:keys [requestor]}]
+  (if-let [payment (money/best-payment requestor (build-balances))]
+    (talk/event->str payment)
+    (str "keep your money")))
 
-(defmethod handle-command :event
+(defmethod handle-command [:show :payoffs]
+  [_]
+  (->> (build-balances)
+       (money/minimal-payoffs)
+       (talk/payoffs->str)))
+
+(defmethod handle-command [:show :history]
+  [_]
+  (->> @money-events
+       (talk/recent-money-history)))
+
+(defmethod handle-command [:show :today]
+  [_]
+  (let [meals (build-meals)
+        todays-meal (get meals (time/today))]
+    (talk/today-summary todays-meal)))
+
+(defmethod handle-command [:show :ordered?]
+  [{:keys [requestor]}]
+  (let [meals (build-meals)
+        todays-meal (get meals (time/today))
+        todays-restaurant-name (-> todays-meal :chosen-restaurant :name)
+        orders (meal/orders-for-restaurant meals todays-restaurant-name requestor)]
+    (talk/str-coll orders)))
+
+(defmethod handle-command [:event nil]
   [{:keys [event]}]
   (swap! money-events (fn [events] (conj events event)))
   (store/write-events @money-events money-events-filename)
   (talk/event->reply-str event))
 
-(defmethod handle-command :meal-event
+(defmethod handle-command [:meal-event nil]
   [{:keys [meal-event]}]
   (swap! meal-events (fn [events] (conj events meal-event)))
   (store/write-events @meal-events meal-events-filename)
