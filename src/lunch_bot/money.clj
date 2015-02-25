@@ -79,7 +79,7 @@
       (when (< persons-balance-amount 0)
         {:person person
          :type   :should-pay
-         :amount persons-balance-amount
+         :amount (* -1 persons-balance-amount)
          :to     (key max-balance)}))))
 
 
