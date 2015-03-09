@@ -19,7 +19,9 @@
                        "biff" {:status :out}}})
 
 
-(defmulti apply-event-to-meals #(:type %2))
+(defn dispatch-apply-event-to-meals [meals event] (:type event))
+
+(defmulti apply-event-to-meals #'dispatch-apply-event-to-meals)
 
 (defmethod apply-event-to-meals :want
   [meals {:keys [date person restaurant] :as event}]

@@ -45,10 +45,12 @@
   (meal/events->meals (concat @money-events @meal-events)))
 
 
+(defn dispatch-handle-command [cmd] ((juxt :command-type :info-type) cmd))
+
 (defmulti handle-command
           "performs the computation specified by the command and returns a
           reply string, if any."
-          (juxt :command-type :info-type))
+          #'dispatch-handle-command)
 
 (defmethod handle-command [:unrecognized nil]
   [_]
@@ -111,7 +113,9 @@
   (talk/event->reply-str meal-event))
 
 
-(defmulti handle-slack-event (juxt :type :subtype))
+(defn dispatch-handle-slack-event [event] ((juxt :type :subtype) event))
+
+(defmulti handle-slack-event #'dispatch-handle-slack-event)
 
 (defmethod handle-slack-event ["message" nil]
   [{channel-id :channel, user-id :user, text :text}]

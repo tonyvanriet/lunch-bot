@@ -31,7 +31,9 @@
                  payoffs)))
 
 
-(defmulti event->str :type)
+(defn dispatch-event->str [event] (:type event))
+
+(defmulti event->str #'dispatch-event->str)
 
 (defmethod event->str :bought [{:keys [person amount date]}]
   (str (person->str person) " bought lunch for " amount

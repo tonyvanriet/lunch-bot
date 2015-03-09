@@ -7,7 +7,7 @@
   (map #(first %) template))
 
 
-(defmulti command-template->func command-template->element-keys)
+(defmulti command-template->func #'command-template->element-keys)
 
 (defmethod command-template->func :default [_]
   nil)
