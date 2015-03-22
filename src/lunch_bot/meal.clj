@@ -16,7 +16,8 @@
                                :cost   8.5M}
                        "rozz" {:status :in
                                :order  "bowl of chili"
-                               :cost   9M}
+                               :cost   9M
+                               :bought 20M}
                        "biff" {:status :out}}})
 
 
@@ -70,15 +71,17 @@
   (reduce apply-event-to-meals {} events))
 
 
-(defn person-in? [meal person] (-> meal :people (get person) :status (= :in)))
-
-(defn person-out? [meal person] (-> meal :people (get person) :status (= :out)))
-
-(defn person-ordered? [meal person] (-> meal :people (get person) :order))
+(defn person-in? [meal person] (= (get-in meal [:people person :status]) :in))
+(defn person-out? [meal person] (= (get-in meal [:people person :status]) :out))
+(defn person-ordered? [meal person] (get-in meal [:people person :order])) ; good nil punning? or should I be using contains?
+(defn person-bought? [meal person] (get-in meal [:people person :bought]))
+(defn person-costed? [meal person] (get-in meal [:people person :cost]))
 
 (defn people-in [meal] (filter #(person-in? meal %) (keys (:people meal))))
-
 (defn people-out [meal] (filter #(person-out? meal %) (keys (:people meal))))
+(defn people-bought [meal] (filter #(person-bought? meal %) (keys (:people meal))))
+
+(defn any-bought? [meal] (some #(contains? % :bought) (vals (:people meal))))
 
 
 (defn person-meal-history

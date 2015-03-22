@@ -129,11 +129,28 @@
 
 (defn post-order-summary
   [meal]
-  (str meal))
+  [meal]
+  (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)
+        ins (meal/people-in meal)
+        buyers (meal/people-bought meal)
+        costless-ins (filter #(not (meal/person-costed? meal %)) ins)]
+    (str (when chosen-restaurant-name
+           (str "Ordered from " chosen-restaurant-name "\n"))
+         (when (seq buyers)
+           (str (people->str buyers) " *bought*" "\n"))
+         (when (seq ins)
+           (str (people->str ins) " " (if (= (count ins) 1) "was" "were") " *in*" "\n"))
+         (if (seq costless-ins)
+           (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
+                (if (= (count costless-ins) 1) "." "es.") "\n")
+           "<buyers> are <amount> (short|ahead)"))))
+
 
 (defn today-summary
   [meal]
-  (pre-order-summary meal))
+  (if (meal/any-bought? meal)
+    (post-order-summary meal)
+    (pre-order-summary meal)))
 
 
 (defn person-meal->str
