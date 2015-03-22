@@ -3,7 +3,8 @@
             [clojure.pprint :refer [pprint]]
             [clj-time.core :as time]
             [clj-slack-client.team-state :as ts]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [lunch-bot.meal :as meal]))
 
 
 (defn str-coll
@@ -15,7 +16,19 @@
     (str object)))
 
 
-(defn person->str [person] (ts/id->name person))
+(defn person->str [person]
+  (if-let [name (ts/id->name person)]
+    name
+    person))
+
+(defn people->str
+  "returns a comma-delimited str of people"
+  [people]
+  (let [people-strs (map person->str people)]
+    (if (= (count people-strs) 1)
+      (first people-strs)
+      (str (apply str (interpose ", " (butlast people-strs)))
+           ", and " (last people-strs)))))
 
 
 (defn balances->str [balances]
@@ -89,22 +102,30 @@
 (defn meal->orders-str
   [meal]
   (let [people-with-orders (filter #(contains? (val %) :order) (:people meal))]
-    (for [person-with-order people-with-orders
-          :let [person (key person-with-order)
-                order (:order (val person-with-order))
-                order-lines (str/split-lines order)]]
-      (str (person->str person) "\n"
-           (->> order-lines
-                (map #(str ">" % "\n"))
-                (apply str))))))
+    (apply str (for [person-with-order people-with-orders
+                     :let [person (key person-with-order)
+                           order (:order (val person-with-order))]]
+                 (str (person->str person) "\n"
+                      "```" order "```" "\n")))))
 
 
 (defn pre-order-summary
   [meal]
-  (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)]
-    (str (when chosen-restaurant-name (str "Ordering " chosen-restaurant-name "\n"))
-         "\n"
-         (apply str (meal->orders-str meal)))))
+  (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)
+        ins (meal/people-in meal)
+        outs (meal/people-out meal)
+        orderless-ins (filter #(not (meal/person-ordered? meal %)) ins)]
+    (str (if chosen-restaurant-name
+           (str "Ordering " chosen-restaurant-name "\n")
+           (str "Waiting for somebody to choose a restaurant" "\n"))
+         (when (seq ins)
+           (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
+         (when (seq outs)
+           (str (people->str outs) " " (if (= (count outs) 1) "is" "are") " *out*" "\n"))
+         (when (seq orderless-ins)
+           (str "Waiting for " (if (= (count orderless-ins) 1) "an order" "orders")
+                " from " (people->str orderless-ins) "\n"))
+         (meal->orders-str meal))))
 
 (defn post-order-summary
   [meal]
@@ -124,7 +145,7 @@
 
 (defn person-meal-history
   [person-meals restaurant]
-  (apply str "Latest orders for " (:name restaurant) "\n"
+  (apply str "Your latest orders for " (:name restaurant) "\n"
          (map person-meal->str person-meals)))
 
 

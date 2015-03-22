@@ -70,9 +70,15 @@
   (reduce apply-event-to-meals {} events))
 
 
-(defn person-ordered?
-  [meal person]
-  (-> meal :people (get person) :order))
+(defn person-in? [meal person] (-> meal :people (get person) :status (= :in)))
+
+(defn person-out? [meal person] (-> meal :people (get person) :status (= :out)))
+
+(defn person-ordered? [meal person] (-> meal :people (get person) :order))
+
+(defn people-in [meal] (filter #(person-in? meal %) (keys (:people meal))))
+
+(defn people-out [meal] (filter #(person-out? meal %) (keys (:people meal))))
 
 
 (defn person-meal-history
@@ -85,6 +91,4 @@
        (reverse)
        (take n)
        (map #(-> % val :people (get person)))))
-
-
 
