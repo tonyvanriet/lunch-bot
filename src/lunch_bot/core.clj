@@ -91,7 +91,7 @@
   (let [meals (build-meals)
         todays-meal (get meals (time/today))]
     (if-let [todays-restaurant (-> todays-meal :chosen-restaurant)]
-      (let [person-meals (meal/person-meal-history meals todays-restaurant requestor)]
+      (let [person-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
         (talk/person-meal-history person-meals todays-restaurant))
       (str "Somebody needs to choose a restaurant first."))))
 

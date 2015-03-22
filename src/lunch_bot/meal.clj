@@ -75,14 +75,14 @@
 
 
 (defn person-meal-history
-  "returns the meal info for the last 3 times this person placed an order"
-  [meals restaurant person]
+  "returns the meal info for the last n times this person placed an order"
+  [meals restaurant person n]
   (->> meals
        (filter #(= (:name restaurant) (-> (val %) :chosen-restaurant :name)))
        (filter #(person-ordered? (val %) person))
        (into (sorted-map))
        (reverse)
-       (take 3)
+       (take n)
        (map #(-> % val :people (get person)))))
 
 
