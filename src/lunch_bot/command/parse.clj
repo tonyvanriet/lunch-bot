@@ -22,6 +22,9 @@
 
 (def relative-date-strs ["today" "yesterday"])
 
+; todo refactor these recognized strs to be a seq of strs that map to a keyword
+; to allow different user input to map to the same element
+
 
 (defn first-starts-with
   [word strs]

@@ -97,12 +97,14 @@
 
 (defmethod handle-command [:event nil]
   [{:keys [event]}]
+  ; todo assoc commander and timestamp onto event
   (swap! money-events (fn [events] (conj events event)))
   (store/write-events @money-events money-events-filename)
   (talk/event->reply-str event))
 
 (defmethod handle-command [:meal-event nil]
   [{:keys [meal-event]}]
+  ; todo assoc commander and timestamp onto event
   (swap! meal-events (fn [events] (conj events meal-event)))
   (store/write-events @meal-events meal-events-filename)
   (when (= (:type meal-event) :choose)
@@ -110,6 +112,7 @@
           channel-id (:id (get-lunch-channel))]
       (web/channels-setTopic *api-token* channel-id
                              (str "ordering " (:name restaurant)))))
+  ; todo if :out and person has a cost for this meal, create money-event to retract that cost
   (talk/event->reply-str meal-event))
 
 
