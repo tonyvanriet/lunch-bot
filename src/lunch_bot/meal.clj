@@ -1,4 +1,5 @@
-(ns lunch-bot.meal)
+(ns lunch-bot.meal
+  (:require [clojure.core.incubator :refer [dissoc-in]]))
 
 
 ;;
@@ -35,8 +36,8 @@
   [meals {:keys [date person] :as event}]
   (-> meals
       (assoc-in [date :people person :status] :out)
-      (assoc-in [date :people person :order] nil)
-      (assoc-in [date :people person :cost] nil)))
+      (dissoc-in [date :people person :order])
+      (dissoc-in [date :people person :cost])))
 
 (defmethod apply-event-to-meals :choose
   [meals {:keys [date restaurant] :as event}]
