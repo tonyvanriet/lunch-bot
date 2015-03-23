@@ -42,7 +42,9 @@
   (money/events->balances @money-events))
 
 (defn build-meals []
-  (meal/events->meals (concat @money-events @meal-events)))
+  (->> (concat @money-events @meal-events)
+       (sort-by :ts)
+       (meal/events->meals)))
 
 
 (defn contextualize-event
@@ -194,7 +196,6 @@
       (shutdown-agents))))
 
 
-; todo add timestamp to money and meal-events so they can be sorted after concatenation
 ; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
 ; todo ‘order usual’ - usual defaults to most recent order, or user setting
 ; todo 'usual food food food' - set usual for chosen restaurant
