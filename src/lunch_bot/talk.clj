@@ -129,7 +129,6 @@
 
 (defn post-order-summary
   [meal]
-  [meal]
   (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)
         ins (meal/people-in meal)
         buyers (meal/people-bought meal)
