@@ -48,7 +48,7 @@
 (defn contextualize-event
   "adds slack message context to event"
   [event {user-id :user, ts :ts, :as msg}]
-  (-> event (assoc :person user-id)))
+  (-> event (assoc :person user-id) (assoc :ts ts)))
 
 
 (defn dispatch-handle-command [cmd msg] ((juxt :command-type :info-type) cmd))
