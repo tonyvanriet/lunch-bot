@@ -133,18 +133,24 @@
   (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)
         ins (meal/people-in meal)
         buyers (meal/people-bought meal)
-        costless-ins (filter #(not (meal/person-costed? meal %)) ins)]
+        buyers-str (people->str buyers)
+        multiple-buyers? (> (count buyers) 1)
+        costless-ins (filter #(not (meal/person-costed? meal %)) ins)
+        buyer-owed (- (meal/total-bought meal) (meal/total-cost meal))]
     (str (when chosen-restaurant-name
            (str "Ordered from " chosen-restaurant-name "\n"))
          (when (seq buyers)
-           (str (people->str buyers) " *bought*" "\n"))
+           (str buyers-str " *bought*" "\n"))
          (when (seq ins)
-           (str (people->str ins) " " (if (= (count ins) 1) "was" "were") " *in*" "\n"))
+           (str (people->str ins) " " (if multiple-buyers? "were" "was") " *in*" "\n"))
          (if (seq costless-ins)
            (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
                 (if (= (count costless-ins) 1) "." "es.") "\n")
-           "<buyers> are <amount> (short|ahead)"))))
-
+           (str buyers-str " " (if multiple-buyers? "are" "is")
+                (cond (= buyer-owed 0M) (str " squared away")
+                      (< buyer-owed 0M) (str " " (- buyer-owed) " ahead")
+                      (> buyer-owed 0M) (str " " buyer-owed " short"))
+                "\n")))))
 
 (defn today-summary
   [meal]

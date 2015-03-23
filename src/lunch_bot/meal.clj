@@ -83,6 +83,8 @@
 
 (defn any-bought? [meal] (some #(contains? % :bought) (vals (:people meal))))
 
+(defn total-bought [meal] (reduce + (map #(get % :bought 0) (-> meal :people vals))))
+(defn total-cost [meal] (reduce + (map #(get % :cost 0) (-> meal :people vals))))
 
 (defn person-meal-history
   "returns the meal info for the last n times this person placed an order"
