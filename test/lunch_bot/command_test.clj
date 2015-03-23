@@ -10,16 +10,15 @@
         recipient "U2345"
         amount 34.5M
         text (str "paid <@" recipient "> " amount)]
-    (is (= (message->command payer text) {:command-type :event
-                                          :event        {:person payer
-                                                         :type   :paid
-                                                         :amount amount
-                                                         :to     recipient
-                                                         :date   (time/today)}}))))
+    (is (= (command-text->command text) {:command-type :event
+                                         :event        {:type   :paid
+                                                        :amount amount
+                                                        :to     recipient
+                                                        :date   (time/today)}}))))
 
 
 (deftest process-command-unrecognized-reply-correct
-  (is (= (message->command "U1234" "asdf") {:command-type :unrecognized})))
+  (is (= (command-text->command "asdf") {:command-type :unrecognized})))
 
 
 (deftest parse-amounts

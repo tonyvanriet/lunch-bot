@@ -7,113 +7,99 @@
   (map #(first %) template))
 
 
-(defmulti command-template->func #'command-template->element-keys)
+(defmulti command-template->command #'command-template->element-keys)
 
-(defmethod command-template->func :default [_]
-  nil)
+(defmethod command-template->command :default [_]
+  {:command-type :unrecognized})
 
-(defmethod command-template->func [:show :noun]
+(defmethod command-template->command [:show :noun]
   [[[_ action-type] [_ noun]]]
-  (fn [commander]
-    {:command-type action-type
-     :info-type    noun
-     :requestor    commander}))
+  {:command-type action-type
+   :info-type    noun})
 
-(defmethod command-template->func [:noun]
+(defmethod command-template->command [:noun]
   [[noun-elem]]
-  (command-template->func [[:show :show] noun-elem]))
+  (command-template->command [[:show :show] noun-elem]))
 
-(defmethod command-template->func [:paid :user :amount]
+(defmethod command-template->command [:paid :user :amount]
   [[[_ action-type] [_ user-id] [_ amount]]]
-  (fn [commander]
-    {:command-type :event
-     :event        {:person commander
-                    :type   action-type
-                    :amount amount
-                    :to     user-id
-                    :date   (time/today)}}))
+  {:command-type :event
+   :event        {:type   action-type
+                  :amount amount
+                  :to     user-id
+                  :date   (time/today)}})
 
-(defmethod command-template->func [:paid :amount :user]
+(defmethod command-template->command [:paid :amount :user]
   [[action-elem amount-elem user-elem]]
-  (command-template->func [action-elem user-elem amount-elem]))
+  (command-template->command [action-elem user-elem amount-elem]))
 
-(defmethod command-template->func [:bought :date :amount]
+(defmethod command-template->command [:bought :date :amount]
   [[[_ action-type] [_ date] [_ amount]]]
-  (fn [commander]
-    {:command-type :event
-     :event        {:person commander
-                    :type   action-type
-                    :amount amount
-                    :date   date}}))
+  {:command-type :event
+   :event        {:type   action-type
+                  :amount amount
+                  :date   date}})
 
-(defmethod command-template->func [:bought :amount :date]
+(defmethod command-template->command [:bought :amount :date]
   [[action-elem amount-elem date-elem]]
-  (command-template->func [action-elem date-elem amount-elem]))
+  (command-template->command [action-elem date-elem amount-elem]))
 
-(defmethod command-template->func [:bought :amount]
+(defmethod command-template->command [:bought :amount]
   [[action-elem amount-elem]]
-  (command-template->func [action-elem [:date (time/today)] amount-elem]))
+  (command-template->command [action-elem [:date (time/today)] amount-elem]))
 
-(defmethod command-template->func [:cost :date :amount]
+(defmethod command-template->command [:cost :date :amount]
   [[[_ action-type] [_ date] [_ amount]]]
-  (fn [commander]
-    {:command-type :event
-     :event        {:person commander
-                    :type   action-type
-                    :amount amount
-                    :date   date}}))
+  {:command-type :event
+   :event        {:type   action-type
+                  :amount amount
+                  :date   date}})
 
-(defmethod command-template->func [:cost :amount :date]
+(defmethod command-template->command [:cost :amount :date]
   [[action-elem amount-elem date-elem]]
-  (command-template->func [action-elem date-elem amount-elem]))
+  (command-template->command [action-elem date-elem amount-elem]))
 
-(defmethod command-template->func [:cost :amount]
+(defmethod command-template->command [:cost :amount]
   [[action-elem amount-elem]]
-  (command-template->func [action-elem [:date (time/today)] amount-elem]))
+  (command-template->command [action-elem [:date (time/today)] amount-elem]))
 
 
-(defn command-func-meal-event
+(defn command-meal-event
   [action-type]
-  (fn [commander]
-    {:command-type :meal-event
-     :meal-event   {:type   action-type
-                    :person commander
-                    :date   (time/today)}}))
+  {:command-type :meal-event
+   :meal-event   {:type action-type
+                  :date (time/today)}})
 
-(defn command-func-meal-event-restaurant
+(defn command-meal-event-restaurant
   [action-type restaurant]
-  (fn [commander]
-    {:command-type :meal-event
-     :meal-event   {:type       action-type
-                    :person     commander
-                    :restaurant restaurant
-                    :date       (time/today)}}))
+  {:command-type :meal-event
+   :meal-event   {:type       action-type
+                  :restaurant restaurant
+                  :date       (time/today)}})
 
-(defn command-func-meal-event-food
+(defn command-meal-event-food
   [action-type food]
-  (fn [commander]
-    {:command-type :meal-event
-     :meal-event   {:type   action-type
-                    :person commander
-                    :food   food
-                    :date   (time/today)}}))
+  {:command-type :meal-event
+   :meal-event   {:type action-type
+                  :food food
+                  :date (time/today)}})
 
-(defmethod command-template->func [:in]
+(defmethod command-template->command [:in]
   [[[_ action-type]]]
-  (command-func-meal-event action-type))
+  (command-meal-event action-type))
 
-(defmethod command-template->func [:out]
+(defmethod command-template->command [:out]
   [[[_ action-type]]]
-  (command-func-meal-event action-type))
+  (command-meal-event action-type))
 
-(defmethod command-template->func [:want :restaurant]
+(defmethod command-template->command [:want :restaurant]
   [[[_ action-type] [_ restaurant]]]
-  (command-func-meal-event-restaurant action-type restaurant))
+  (command-meal-event-restaurant action-type restaurant))
 
-(defmethod command-template->func [:choose :restaurant]
+(defmethod command-template->command [:choose :restaurant]
   [[[_ action-type] [_ restaurant]]]
-  (command-func-meal-event-restaurant action-type restaurant))
+  (command-meal-event-restaurant action-type restaurant))
 
-(defmethod command-template->func [:order :food]
+(defmethod command-template->command [:order :food]
   [[[_ action-type] [_ food]]]
-  (command-func-meal-event-food action-type food))
+  (command-meal-event-food action-type food))

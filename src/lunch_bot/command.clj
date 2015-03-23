@@ -94,19 +94,12 @@
     (apply combo/cartesian-product elements-per-word)))
 
 
-(defn text->command-func
+(defn command-text->command
+  "parses the command text and returns a command map"
   [text]
   (->> (parse/text->words text)
        (words->command-templates)
        (map remove-filler)
        (map merge-food-elements)
-       (some template/command-template->func)))
+       (some template/command-template->command)))
 
-
-(defn message->command
-  "parses the message text and returns a command map"
-  [user-id text]
-  (let [cmd-func (text->command-func text)]
-    (if cmd-func
-      (cmd-func user-id)
-      {:command-type :unrecognized})))

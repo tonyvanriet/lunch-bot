@@ -45,7 +45,13 @@
   (meal/events->meals (concat @money-events @meal-events)))
 
 
-(defn dispatch-handle-command [cmd] ((juxt :command-type :info-type) cmd))
+(defn contextualize-event
+  "adds slack message context to event"
+  [event {user-id :user, ts :ts, :as msg}]
+  (-> event (assoc :person user-id)))
+
+
+(defn dispatch-handle-command [cmd msg] ((juxt :command-type :info-type) cmd))
 
 (defmulti handle-command
           "performs the computation specified by the command and returns a
@@ -53,41 +59,41 @@
           #'dispatch-handle-command)
 
 (defmethod handle-command [:unrecognized nil]
-  [_]
+  [_ _]
   "huh?")
 
 (defmethod handle-command [:show :balances]
-  [_]
+  [_ _]
   (->> (build-balances)
        (money/sort-balances)
        (reverse)
        (talk/balances->str)))
 
 (defmethod handle-command [:show :pay?]
-  [{:keys [requestor]}]
+  [_ {requestor :user}]
   (if-let [payment (money/best-payment requestor (build-balances))]
     (talk/event->str payment)
     (str "Keep your money.")))
 
 (defmethod handle-command [:show :payoffs]
-  [_]
+  [_ _]
   (->> (build-balances)
        (money/minimal-payoffs)
        (talk/payoffs->str)))
 
 (defmethod handle-command [:show :history]
-  [_]
+  [_ _]
   (->> @money-events
        (talk/recent-money-history)))
 
 (defmethod handle-command [:show :today]
-  [_]
+  [_ _]
   (let [meals (build-meals)
         todays-meal (get meals (time/today))]
     (talk/today-summary todays-meal)))
 
 (defmethod handle-command [:show :ordered?]
-  [{:keys [requestor]}]
+  [_ {requestor :user}]
   (let [meals (build-meals)
         todays-meal (get meals (time/today))]
     (if-let [todays-restaurant (-> todays-meal :chosen-restaurant)]
@@ -96,24 +102,24 @@
       (str "Somebody needs to choose a restaurant first."))))
 
 (defmethod handle-command [:event nil]
-  [{:keys [event]}]
-  ; todo assoc commander and timestamp onto event
-  (swap! money-events (fn [events] (conj events event)))
-  (store/write-events @money-events money-events-filename)
-  (talk/event->reply-str event))
+  [cmd msg]
+  (let [event (contextualize-event (:event cmd) msg)]
+    (swap! money-events (fn [events] (conj events event)))
+    (store/write-events @money-events money-events-filename)
+    (talk/event->reply-str event)))
 
 (defmethod handle-command [:meal-event nil]
-  [{:keys [meal-event]}]
-  ; todo assoc commander and timestamp onto event
-  (swap! meal-events (fn [events] (conj events meal-event)))
-  (store/write-events @meal-events meal-events-filename)
-  (when (= (:type meal-event) :choose)
-    (let [restaurant (:restaurant meal-event)
-          channel-id (:id (get-lunch-channel))]
-      (web/channels-setTopic *api-token* channel-id
-                             (str "ordering " (:name restaurant)))))
-  ; todo if :out and person has a cost for this meal, create money-event to retract that cost
-  (talk/event->reply-str meal-event))
+  [cmd msg]
+  (let [event (contextualize-event (:meal-event cmd) msg)]
+    (swap! meal-events (fn [events] (conj events event)))
+    (store/write-events @meal-events meal-events-filename)
+    (when (= (:type event) :choose)
+      (let [restaurant (:restaurant event)
+            channel-id (:id (get-lunch-channel))]
+        (web/channels-setTopic *api-token* channel-id
+                               (str "ordering " (:name restaurant)))))
+    ; todo if :out and person has a cost for this meal, create money-event to retract that cost
+    (talk/event->reply-str event)))
 
 
 (defn dispatch-handle-slack-event [event] ((juxt :type :subtype) event))
@@ -121,16 +127,16 @@
 (defmulti handle-slack-event #'dispatch-handle-slack-event)
 
 (defmethod handle-slack-event ["message" nil]
-  [{channel-id :channel, user-id :user, text :text}]
+  [{channel-id :channel, user-id :user, text :text, :as msg}]
   (when (not (state/bot? user-id))
     (when-let [cmd-text (command/message->command-text channel-id text)]
-      (let [cmd (command/message->command user-id cmd-text)
-            cmd-reply (handle-command cmd)]
+      (let [cmd (command/command-text->command cmd-text)
+            cmd-reply (handle-command cmd msg)]
         (when cmd-reply
           (talk/say-message channel-id cmd-reply))))))
 
 (defmethod handle-slack-event ["message" "message_changed"]
-  [{channel-id :channel, {user-id :user, text :text} :message}]
+  [{channel-id :channel, {text :text} :message}]
   (when (command/message->command-text channel-id text)
     (talk/say-message channel-id "huh?")))
 
