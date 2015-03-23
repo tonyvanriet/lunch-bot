@@ -131,6 +131,7 @@
   [meal]
   (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)
         ins (meal/people-in meal)
+        multiple-ins? (> (count ins) 1)
         buyers (meal/people-bought meal)
         buyers-str (people->str buyers)
         multiple-buyers? (> (count buyers) 1)
@@ -141,7 +142,7 @@
          (when (seq buyers)
            (str buyers-str " *bought*" "\n"))
          (when (seq ins)
-           (str (people->str ins) " " (if multiple-buyers? "were" "was") " *in*" "\n"))
+           (str (people->str ins) " " (if multiple-ins? "were" "was") " *in*" "\n"))
          (if (seq costless-ins)
            (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
                 (if (= (count costless-ins) 1) "." "es.") "\n")
