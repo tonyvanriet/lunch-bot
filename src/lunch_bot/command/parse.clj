@@ -100,15 +100,22 @@
 
 
 (def ^:private restaurants (atom []))
-(swap! restaurants (fn [_] [{:name "BW3"}
-                            {:name "Chipotle"}
-                            {:name "Binny's"}]))
+(swap! restaurants
+       (fn [_] (map #(hash-map :name %) ["BW3" "Chipotle" "Portillo's" "Elephant" "Smoque"
+                                          "Superdawg" "Naf" "Makisu"])))
+
+; todo handle multi-word restaurant names
+
+(defn normalize-restaurant-word
+  [word] (-> word
+             (.toLowerCase)
+             (str/replace #"\W" "")))
 
 (defn word->restaurant
   "returns the first restaurant for which the name starts with the word"
   [word]
-  (let [lword (.toLowerCase word)]
+  (let [norm-word (normalize-restaurant-word word)]
     (first (filter #(-> (:name %)
-                        (.toLowerCase)
-                        (.startsWith lword))
+                        (normalize-restaurant-word)
+                        (.startsWith norm-word))
                    @restaurants))))
