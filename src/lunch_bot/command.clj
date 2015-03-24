@@ -32,11 +32,11 @@
 ;;
 
 
-(defn get-channel-command-signature []
-  "generates a regex that will match against a channel message that should
-  be interpreted as a command, and captures the command text from the message."
+(defn get-command-signature-re []
+  "returns a regex that will match a command signature, indicating
+  that the user wants lunchbot to interpret the message as a command"
   (let [linkified-self (tx/linkify (state/self-id))]
-    (str linkified-self ":? *(.+)")))
+    (re-pattern (str linkified-self ":?"))))
 
 
 (defn message->command-text
@@ -44,12 +44,12 @@
   the command text from the message."
   [channel-id text]
   (when text
-    (if (state/dm? channel-id)
-      text
-      (when-let [[_ cmd-text] (-> (get-channel-command-signature)
-                                  (re-pattern)
-                                  (re-find text))]
-        cmd-text))))
+    (let [cmd-signature-re (get-command-signature-re)
+          has-cmd-signature (re-find cmd-signature-re text)]
+      (when (or (state/dm? channel-id) has-cmd-signature)
+        (-> text
+            (str/replace cmd-signature-re "")
+            (str/trim))))))
 
 
 (defn word->command-elements
