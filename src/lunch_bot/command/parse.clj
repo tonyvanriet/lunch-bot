@@ -1,7 +1,8 @@
 (ns lunch-bot.command.parse
   (require
-    [clj-time.core :as tc]
-    [clj-time.format :as tf]
+    [clj-time.core :as time]
+    [clj-time.format :refer [formatter parse]]
+    [clj-time.coerce :refer [to-local-date]]
     [clj-slack-client.team-state :as team]
     [clojure.string :as str]))
 
@@ -72,7 +73,7 @@
         (BigDecimal.))))
 
 (def date-formatter
-  (tf/formatter (tc/default-time-zone) "YYYYMMdd" "YYYY-MM-dd" "YYYY/MM/dd"))
+  (formatter (time/default-time-zone) "YYYYMMdd" "YYYY-MM-dd" "YYYY/MM/dd"))
 
 (defn word->relative-date
   [word]
@@ -81,16 +82,16 @@
 (defn relative-date->date
   [relative-date]
   (case relative-date
-    :today (tc/today)
-    :yesterday (tc/minus (tc/today) (tc/days 1))            ; tc/yesterday returns (now - 1 day) as a DateTime
+    :today (time/today)
+    :yesterday (time/minus (time/today) (time/days 1))            ; tc/yesterday returns (now - 1 day) as a DateTime
     :default nil))
 
 (defn word->date
   [word]
   (if-let [relative-date (word->relative-date word)]
     (relative-date->date relative-date)
-    #_(try
-      (tf/parse date-formatter word)
+    (try
+      (to-local-date (parse date-formatter word))
       (catch IllegalArgumentException ex
         nil))))
 
