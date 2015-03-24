@@ -20,12 +20,12 @@
 ;;   unnecessary text (:filler)
 ;;
 ;; the list of command elements is a command template.
-;; the command template is compared against a prioritized list of
-;; recognized command templates.
-;; if a match is found, the matching command template provides a function
-;; that parses specific information out of the command (user-ids, actual
-;; amounts, dates) and then calls out to some other part of the system
-;; to perform the corresponding action.
+;; the command template is compared against a list of recognized command
+;; templates.
+;; if a match is found, that command template is used to create a command
+;; map with the parsed data from the template (user-ids, amounts, dates).
+;; that command map is then returned to the caller to be used to perform
+;; the corresponding action.
 ;; if no match is found, it's considered an invalid command.
 ;;   could recognize partial command templates give the user an error
 ;;   message indicating the unrecognized parts.
