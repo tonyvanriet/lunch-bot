@@ -88,11 +88,13 @@
   (->> @money-events
        (talk/recent-money-history)))
 
-(defmethod handle-command [:show :today]
-  [_ _]
+(defmethod handle-command [:show :meal-summary]
+  [{:keys [date] :as cmd} _]
   (let [meals (build-meals)
-        todays-meal (get meals (time/today))]
-    (talk/today-summary todays-meal)))
+        meal (get meals date)]
+    (if (or (time/before? date (time/today)) (meal/any-bought? meal))
+      (talk/post-order-summary meal)
+      (talk/pre-order-summary meal))))
 
 (defmethod handle-command [:show :ordered?]
   [_ {requestor :user}]

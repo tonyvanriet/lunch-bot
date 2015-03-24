@@ -21,6 +21,16 @@
   [[noun-elem]]
   (command-template->command [[:show :show] noun-elem]))
 
+(defmethod command-template->command [:show :date]
+  [[[_ action-type] [_ date]]]
+  {:command-type action-type
+   :info-type    :meal-summary
+   :date         date})
+
+(defmethod command-template->command [:date]
+  [[date-elem]]
+  (command-template->command [[:show :show] date-elem]))
+
 (defmethod command-template->command [:paid :user :amount]
   [[[_ action-type] [_ user-id] [_ amount]]]
   {:command-type :event

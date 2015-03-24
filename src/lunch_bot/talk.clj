@@ -136,27 +136,22 @@
         buyers-str (people->str buyers)
         multiple-buyers? (> (count buyers) 1)
         costless-ins (filter #(not (meal/person-costed? meal %)) ins)
-        buyer-owed (- (meal/total-bought meal) (meal/total-cost meal))]
-    (str (when chosen-restaurant-name
-           (str "Ordered from " chosen-restaurant-name "\n"))
-         (when (seq buyers)
-           (str buyers-str " *bought*" "\n"))
-         (when (seq ins)
-           (str (people->str ins) " " (if multiple-ins? "were" "was") " *in*" "\n"))
-         (if (seq costless-ins)
-           (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
-                (if (= (count costless-ins) 1) "." "es.") "\n")
-           (str buyers-str " " (if multiple-buyers? "are" "is")
-                (cond (= buyer-owed 0M) (str " squared away")
-                      (< buyer-owed 0M) (str " " (- buyer-owed) " ahead")
-                      (> buyer-owed 0M) (str " " buyer-owed " short"))
-                "\n")))))
-
-(defn today-summary
-  [meal]
-  (if (meal/any-bought? meal)
-    (post-order-summary meal)
-    (pre-order-summary meal)))
+        buyer-surplus (- (meal/total-bought meal) (meal/total-cost meal))]
+    (if chosen-restaurant-name
+      (str "Ordered from " chosen-restaurant-name "\n"
+           (when (seq buyers)
+             (str buyers-str " *bought*" "\n"))
+           (when (seq ins)
+             (str (people->str ins) " " (if multiple-ins? "were" "was") " *in*" "\n"))
+           (if (seq costless-ins)
+             (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
+                  (if (= (count costless-ins) 1) "." "es.") "\n")
+             (str buyers-str " " (if multiple-buyers? "are" "is")
+                  (cond (= buyer-surplus 0M) (str " squared away")
+                        (< buyer-surplus 0M) (str " " (- buyer-surplus) " ahead")
+                        (> buyer-surplus 0M) (str " " buyer-surplus " short"))
+                  "\n")))
+      "No restaurant chosen")))
 
 
 (defn person-meal->str
