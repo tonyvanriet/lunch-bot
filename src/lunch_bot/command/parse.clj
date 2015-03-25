@@ -103,7 +103,8 @@
 (def ^:private restaurants (atom []))
 (swap! restaurants
        (fn [_] (map #(hash-map :name %) ["BW3" "Chipotle" "Portillo's" "Elephant" "Smoque"
-                                          "Superdawg" "Naf Naf" "Makisu" "Jimmy John's" "Potbelly"])))
+                                         "Superdawg" "Naf Naf" "Makisu" "Jimmy John's" "Potbelly"
+                                         "Five Guys" "Corner Bakery"])))
 
 ; todo handle multi-word restaurant names
 
