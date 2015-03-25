@@ -19,7 +19,7 @@
 
 (def noun-strs ["balances" "pay?" "payoffs" "history" "ordered?"])
 
-(def filler-strs ["lunch" "for" "i" "my" "i'm"])
+(def filler-strs ["lunch" "for" "i" "my" "i'm" "on" "have" "the" "what" "who" "should"])
 
 (def relative-date-strs ["today" "yesterday"])
 
