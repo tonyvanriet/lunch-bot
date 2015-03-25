@@ -12,6 +12,10 @@
 (defmethod command-template->command :default [_]
   nil)
 
+(defmethod command-template->command [:help]
+  [[[_ action-type]]]
+  {:command-type action-type})
+
 (defmethod command-template->command [:show :noun]
   [[[_ action-type] [_ noun]]]
   {:command-type action-type

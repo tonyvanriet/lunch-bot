@@ -64,6 +64,10 @@
   [_ _]
   "huh?")
 
+(defmethod handle-command [:help nil]
+  [_ _]
+  (slurp "help.md"))
+
 (defmethod handle-command [:show :balances]
   [_ _]
   (->> (build-balances)

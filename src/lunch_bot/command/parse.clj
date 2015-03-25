@@ -15,7 +15,7 @@
 
 
 (def action-strs ["show" "paid" "bought" "cost" "undo"
-                  "want" "choose" "order" "in" "out"])
+                  "want" "choose" "order" "in" "out" "help"])
 
 (def noun-strs ["balances" "pay?" "payoffs" "history" "ordered?"])
 
