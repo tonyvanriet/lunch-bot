@@ -10,7 +10,7 @@
 (defmulti command-template->command #'command-template->element-keys)
 
 (defmethod command-template->command :default [_]
-  {:command-type :unrecognized})
+  nil)
 
 (defmethod command-template->command [:show :noun]
   [[[_ action-type] [_ noun]]]

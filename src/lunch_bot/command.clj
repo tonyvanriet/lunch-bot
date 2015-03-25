@@ -97,9 +97,10 @@
 (defn command-text->command
   "parses the command text and returns a command map"
   [text]
-  (->> (parse/text->words text)
-       (words->command-templates)
-       (map remove-filler)
-       (map merge-food-elements)
-       (some template/command-template->command)))
+  (let [templates (->> (parse/text->words text)
+                       (words->command-templates)
+                       (map remove-filler)
+                       (map merge-food-elements))
+        cmd (some template/command-template->command templates)]
+    (if cmd cmd {:command-type :unrecognized})))
 
