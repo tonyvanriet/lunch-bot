@@ -35,7 +35,7 @@
   (swap! meal-events (fn [_] (into [] (store/read-events meal-events-filename)))))
 
 
-(defn get-lunch-channel [] (state/name->channel "lunch"))
+(defn get-lunch-channel-id [] (:id (state/name->channel "lunch")))
 
 
 (defn build-balances []
@@ -123,7 +123,7 @@
     (store/write-events @meal-events meal-events-filename)
     (when (= (:type event) :choose)
       (let [restaurant (:restaurant event)
-            channel-id (:id (get-lunch-channel))]
+            channel-id (get-lunch-channel-id)]
         (web/channels-setTopic *api-token* channel-id
                                (str "ordering " (:name restaurant)))))
     ; todo if :out and person has a cost for this meal, create money-event to retract that cost
