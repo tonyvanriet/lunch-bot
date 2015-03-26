@@ -74,17 +74,27 @@
   (filter #(not (= (first %) :filler)) command-template))
 
 
-(defn merge-food-elements
-  "combine consecutive food elements into a single element"
-  [command-template]
+(defn merge-elements
+  "reduces the elements in the command-template, aggregating the next element into
+  the previous if the merge function returns a merged element"
+  [command-template merge]
   (reduce (fn [template element]
-            (if (= :food (first (last template)) (first element))
-              (let [last-food (second (last template))
-                    next-food (second element)]
-                (conj (vec (butlast template)) [:food (str last-food " " next-food)]))
+            (if-let [merged-elem (merge (last template) element)]
+              (conj (vec (butlast template)) merged-elem)
               (conj template element)))
           []
           command-template))
+
+(defn merge-food-elements
+  [command-template]
+  (merge-elements command-template #(when (= :food (first %1) (first %2))
+                                     (vector :food (str (second %1) " " (second %2))))))
+
+(defn merge-restaurant-elements
+  [command-template]
+  (merge-elements command-template #(when (and (= :restaurant (first %1) (first %2))
+                                               (= (second %1) (second %2)))
+                                     (vector :restaurant (second %1)))))
 
 
 (defn words->command-templates
@@ -100,7 +110,8 @@
   (let [templates (->> (parse/text->words text)
                        (words->command-templates)
                        (map remove-filler)
-                       (map merge-food-elements))
+                       (map merge-food-elements)
+                       (map merge-restaurant-elements))
         cmd (some template/command-template->command templates)]
     (if cmd cmd {:command-type :unrecognized})))
 
