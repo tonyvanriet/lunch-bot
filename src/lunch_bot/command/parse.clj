@@ -81,7 +81,7 @@
   [relative-date]
   (case relative-date
     :today (time/today)
-    :yesterday (time/minus (time/today) (time/days 1))            ; tc/yesterday returns (now - 1 day) as a DateTime
+    :yesterday (time/minus (time/today) (time/days 1))      ; tc/yesterday returns (now - 1 day) as a DateTime
     :default nil))
 
 (defn word->date
@@ -104,18 +104,18 @@
                                          "Superdawg" "Naf Naf" "Makisu" "Jimmy John's" "Potbelly"
                                          "Five Guys" "Corner Bakery"])))
 
-; todo handle multi-word restaurant names
-
 (defn normalize-restaurant-word
   [word] (-> word
              (.toLowerCase)
              (str/replace #"\W" "")))
 
 (defn word->restaurant
-  "returns the first restaurant for which the name starts with the word"
+  "returns the first restaurant for which a word in the name starts with the given word"
   [word]
   (let [norm-word (normalize-restaurant-word word)]
-    (first (filter #(-> (:name %)
-                        (normalize-restaurant-word)
-                        (.startsWith norm-word))
+    (first (filter (fn [w] (->> (:name w)
+                                (text->words)
+                                (map normalize-restaurant-word)
+                                (some #(.startsWith % norm-word))))
                    @restaurants))))
+
