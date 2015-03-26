@@ -9,7 +9,9 @@
 
 (defn text->words
   [text]
-  (str/split text #"(?: |\n)+"))
+  (-> text
+      (str/replace "\n" "\n ")
+      (str/split #" +")))
 
 
 (def action-strs ["show" "paid" "bought" "cost" "undo"
