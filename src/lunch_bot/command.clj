@@ -56,16 +56,16 @@
   "runs the word through all element parsers and returns all
   elements with non-nil values"
   [word]
-  (let [trimmed-word (str/trim word)
-        action-keyword (parse/word->action trimmed-word)
+  (let [cleaned-word (-> word (str/trim) (str/lower-case))
+        action-keyword (parse/word->action cleaned-word)
         elements [[action-keyword action-keyword]
-                  [:noun (parse/word->noun trimmed-word)]
-                  [:user (parse/word->user-id trimmed-word)]
-                  [:amount (parse/word->amount trimmed-word)]
-                  [:date (parse/word->date trimmed-word)]
-                  [:restaurant (parse/word->restaurant trimmed-word)]
+                  [:noun (parse/word->noun cleaned-word)]
+                  [:user (parse/word->user-id cleaned-word)]
+                  [:amount (parse/word->amount cleaned-word)]
+                  [:date (parse/word->date cleaned-word)]
+                  [:restaurant (parse/word->restaurant cleaned-word)]
                   [:food (parse/word->food word)]
-                  [:filler (parse/word->filler trimmed-word)]]]
+                  [:filler (parse/word->filler cleaned-word)]]]
     (filter second elements)))
 
 

@@ -13,52 +13,57 @@
       (str/replace "\n" "\n ")
       (str/split #" +")))
 
+(def action-str-map {:show   ["show"]
+                     :paid   ["paid"]
+                     :bought ["bought"]
+                     :cost   ["cost"]
+                     :choose ["choose"]
+                     :order  ["order"]
+                     :in     ["in"]
+                     :out    ["out"]
+                     :help   ["help"]
+                     :tax    ["tax" "+tax"]})
 
-(def action-strs ["show" "paid" "bought" "cost" "undo"
-                  "want" "choose" "order" "in" "out" "help"])
+(def noun-str-map {:balances ["balances"]
+                   :pay?     ["pay?"]
+                   :payoffs  ["payoffs"]
+                   :history  ["history"]
+                   :ordered? ["ordered?"]})
 
-(def noun-strs ["balances" "pay?" "payoffs" "history" "ordered?"])
+(def filler-str-map {:filler ["lunch" "for" "i" "my" "i'm" "on" "have"
+                              "the" "what" "who" "should" "+" "plus"]})
 
-(def filler-strs ["lunch" "for" "i" "my" "i'm" "on" "have" "the" "what" "who" "should"])
-
-(def relative-date-strs ["today" "yesterday"])
-
-; todo refactor these recognized strs to be a seq of strs that map to a keyword
-; to allow different user input to map to the same element
+(def relative-date-str-map {:today     ["today"]
+                            :yesterday ["yesterday"]})
 
 
 (defn first-starts-with
   [word strs]
   (some #(when (.startsWith % word) %) strs))
 
-(defn word->keyword
-  "finds the first str in strs that starts with the word and returns
-  it as a keyword."
-  [word strs]
-  (-> word
-      (.toLowerCase)
-      (first-starts-with strs)
-      (keyword)))
+(defn word->element-keyword
+  "finds the first str in the str-map that starts with the given word
+  and returns the associated key. assumes the word is lower-case."
+  [word str-map]
+  (some->> str-map
+           (filter #(first-starts-with word (val %)))
+           (first)
+           (key)))
 
-(defn word->action
-  [word]
-  (word->keyword word action-strs))
+(defn word->action [word] (word->element-keyword word action-str-map))
+
+(defn word->noun [word] (word->element-keyword word noun-str-map))
+
+(defn word->filler [word] (word->element-keyword word filler-str-map))
+
+(defn word->relative-date [word] (word->element-keyword word relative-date-str-map))
+
 
 (defn word->user-id
   [word]
   (if-let [[_ user-id] (re-find #"<@(U\w+)(?:\|\w+)?>" word)]
     user-id
     (team/name->id word)))
-
-(defn word->noun
-  [word]
-  (word->keyword word noun-strs))
-
-(defn word->filler
-  [word]
-  (-> word
-      (.toLowerCase)
-      (first-starts-with filler-strs)))
 
 (def amount-regex #"^((?:[+-]?\$?(?:[0-9]{1,3}(?:,?[0-9]{3})*|[0-9]+)(?:\.[0-9]{1,2})?)|(?:\.[0-9]{1,2}))$")
 
@@ -74,10 +79,6 @@
 
 (def date-formatter
   (formatter (time/default-time-zone) "YYYYMMdd" "YYYY-MM-dd" "YYYY/MM/dd"))
-
-(defn word->relative-date
-  [word]
-  (word->keyword word relative-date-strs))
 
 (defn relative-date->date
   [relative-date]
@@ -108,7 +109,7 @@
 
 (defn normalize-restaurant-word
   [word] (-> word
-             (.toLowerCase)
+             (str/lower-case)
              (str/replace #"\W" "")))
 
 (defn word->restaurant
