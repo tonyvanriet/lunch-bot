@@ -13,8 +13,11 @@
      [web :as web]]
     [clj-time.core :as time]))
 
+    [clojure.core.incubator :refer [dissoc-in]])
+  (:import (java.math RoundingMode)))
 
 (def api-token-filename "api-token.txt")
+(def sales-tax-rate 0.0925M)
 
 (def ^:dynamic *api-token* nil)
 
@@ -51,6 +54,16 @@
   "adds slack message context to event"
   [event {user-id :user, ts :ts, :as msg}]
   (-> event (assoc :person user-id) (assoc :ts ts)))
+
+(defn apply-sales-tax
+  "applies the sales-tax-rate to the amount if the events :+tax? is truthy,
+   and then removes :+tax?"
+  [event]
+  (let [taxed-event (if (:+tax? event)
+                      (update-in event [:amount] #(-> (* % (+ 1 sales-tax-rate))
+                                                      (.setScale 2 RoundingMode/HALF_UP)))
+                      event)]
+    (dissoc-in taxed-event [:+tax?])))
 
 
 (defn dispatch-handle-command [cmd msg] ((juxt :command-type :info-type) cmd))
@@ -111,7 +124,9 @@
 
 (defmethod handle-command [:event nil]
   [cmd msg]
-  (let [event (contextualize-event (:event cmd) msg)]
+  (let [event (-> (:event cmd)
+                  (contextualize-event msg)
+                  (apply-sales-tax))]
     (swap! money-events (fn [events] (conj events event)))
     (store/write-events @money-events money-events-filename)
     (talk/event->reply-str event)))
