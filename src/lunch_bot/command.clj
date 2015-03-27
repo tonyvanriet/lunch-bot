@@ -87,14 +87,16 @@
 
 (defn merge-food-elements
   [command-template]
-  (merge-elements command-template #(when (= :food (first %1) (first %2))
-                                     (vector :food (str (second %1) " " (second %2))))))
+  (merge-elements command-template (fn [[k1 v1] [k2 v2]]
+                                     (when (= :food k1 k2)
+                                       [:food (str v1 (when (not (= (last v1) \newline)) " ") v2)]))))
 
 (defn merge-restaurant-elements
   [command-template]
-  (merge-elements command-template #(when (and (= :restaurant (first %1) (first %2))
-                                               (= (second %1) (second %2)))
-                                     (vector :restaurant (second %1)))))
+  (merge-elements command-template (fn [[k1 v1] [k2 v2]]
+                                     (when (and (= :restaurant k1 k2)
+                                                (= v1 v2))
+                                       [:restaurant v1]))))
 
 
 (defn words->command-templates
