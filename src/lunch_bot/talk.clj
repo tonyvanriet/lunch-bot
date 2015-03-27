@@ -25,8 +25,10 @@
   "returns a comma-delimited str of people"
   [people]
   (let [people-strs (map person->str people)]
-    (if (= (count people-strs) 1)
-      (first people-strs)
+    (case (count people-strs)
+      0 nil
+      1 (first people-strs)
+      2 (str (first people-strs) " and " (second people-strs))
       (str (apply str (interpose ", " (butlast people-strs)))
            ", and " (last people-strs)))))
 
