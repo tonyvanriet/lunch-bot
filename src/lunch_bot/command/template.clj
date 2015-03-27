@@ -16,6 +16,9 @@
   [[[_ action-type]]]
   {:command-type action-type})
 
+;
+; show templates
+;
 (defmethod command-template->command [:show :noun]
   [[[_ action-type] [_ noun]]]
   {:command-type action-type
@@ -35,6 +38,9 @@
   [[date-elem]]
   (command-template->command [[:show :show] date-elem]))
 
+;
+; paid templates
+;
 (defmethod command-template->command [:paid :user :amount]
   [[[_ action-type] [_ user-id] [_ amount]]]
   {:command-type :event
@@ -47,6 +53,9 @@
   [[action-elem amount-elem user-elem]]
   (command-template->command [action-elem user-elem amount-elem]))
 
+;
+; bought templates
+;
 (defmethod command-template->command [:bought :date :amount]
   [[[_ action-type] [_ date] [_ amount]]]
   {:command-type :event

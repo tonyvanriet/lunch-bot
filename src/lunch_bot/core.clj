@@ -11,26 +11,25 @@
      [core :as slack]
      [team-state :as state]
      [web :as web]]
-    [clj-time.core :as time]))
-
+    [clj-time.core :as time]
     [clojure.core.incubator :refer [dissoc-in]])
   (:import (java.math RoundingMode)))
 
+;
+; config
+;
 (def api-token-filename "api-token.txt")
+(def money-events-filename "money-events.edn")
+(def meal-events-filename "meal-events.edn")
+(def lunch-channel-name "lunch")
 (def sales-tax-rate 0.0925M)
 
 (def ^:dynamic *api-token* nil)
-
-
-(def money-events-filename "money-events.edn")
 
 (def ^:private money-events (atom []))
 
 (defn initialize-money-events []
   (swap! money-events (fn [_] (into [] (store/read-events money-events-filename)))))
-
-
-(def meal-events-filename "meal-events.edn")
 
 (def ^:private meal-events (atom []))
 
@@ -38,7 +37,7 @@
   (swap! meal-events (fn [_] (into [] (store/read-events meal-events-filename)))))
 
 
-(defn get-lunch-channel-id [] (:id (state/name->channel "lunch")))
+(defn get-lunch-channel-id [] (:id (state/name->channel lunch-channel-name)))
 
 
 (defn build-balances []
@@ -217,10 +216,8 @@
       (shutdown-agents))))
 
 
-; todo 'order’ or ‘order?’ without food shows restaurant info and numbered order history
 ; todo ‘order usual’ - usual defaults to most recent order, or user setting
 ; todo 'usual food food food' - set usual for chosen restaurant
-; todo 'today shows aggregate summary of the day's meal events
 ; todo 'yesterday', 'monday', 'last thursday', 'this week', '1/28'
 ; todo 'add superdawg' or 'restaurant superdawg' - create restaurant
 ; todo 'add superdawg http://www.superdawg.com/menu.cfm 773-763-0660'
