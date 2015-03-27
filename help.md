@@ -16,6 +16,7 @@ Money
 >I *bought* lunch _yesterday_ for _$23.75_
 
 >my lunch *cost* _8.75_
+>my lunch *cost* _6.25_ plus *tax*
 >my lunch *cost* _7.5_ on _2015-03-22_
 
 >who should I *pay?*
