@@ -127,6 +127,7 @@
          (when (seq orderless-ins)
            (str "Waiting for " (if (= (count orderless-ins) 1) "an order" "orders")
                 " from " (people->str orderless-ins) "\n"))
+         "\n"
          (meal->orders-str meal))))
 
 (defn post-order-summary

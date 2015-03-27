@@ -7,7 +7,9 @@ Ordering
 
 > what have I *ordered?*
 
->*order* _jumbo dog_, _no hot peppers_, _large fry_
+>*order* _jumbo dog_
+>_no hot peppers_
+>_large fry_
 
 Money
 >I *bought* lunch for _37.5_
@@ -34,7 +36,3 @@ Eventually
 > show *last thursday*
 
 > order the *usual*
-
->*order* _jumbo dog_
->_no hot peppers_
->_large fry_
