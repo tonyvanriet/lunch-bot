@@ -82,24 +82,24 @@
                   :+tax?  +tax
                   :date   date}})
 
-(def default-cost-date-elem [:date (time/today)])
-(def default-cost-+tax-elem [:+tax nil])
+(defn get-default-cost-date-elem [] [:date (time/today)])
+(defn get-default-cost-+tax-elem [] [:+tax nil])
 
 (defmethod command-template->command [:cost :date :amount]
   [[action-elem date-elem amount-elem]]
-  (command-template->command [action-elem date-elem amount-elem default-cost-+tax-elem]))
+  (command-template->command [action-elem date-elem amount-elem (get-default-cost-+tax-elem)]))
 
 (defmethod command-template->command [:cost :amount :date]
   [[action-elem amount-elem date-elem]]
-  (command-template->command [action-elem date-elem amount-elem default-cost-+tax-elem]))
+  (command-template->command [action-elem date-elem amount-elem (get-default-cost-+tax-elem)]))
 
 (defmethod command-template->command [:cost :amount :+tax]
   [[action-elem amount-elem +tax-elem]]
-  (command-template->command [action-elem default-cost-date-elem amount-elem +tax-elem]))
+  (command-template->command [action-elem (get-default-cost-date-elem) amount-elem +tax-elem]))
 
 (defmethod command-template->command [:cost :amount]
   [[action-elem amount-elem]]
-  (command-template->command [action-elem default-cost-date-elem amount-elem default-cost-+tax-elem]))
+  (command-template->command [action-elem (get-default-cost-date-elem) amount-elem (get-default-cost-+tax-elem)]))
 
 
 (defn command-meal-event
