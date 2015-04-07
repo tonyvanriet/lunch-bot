@@ -161,7 +161,7 @@
   [{:keys [order cost] :as meal-order}]
   (str "```" "order\n"
        order "\n"
-       (when cost (str "cost " cost))
+       #_(when cost (str "cost " cost))
        "```\n"))
 
 (defn person-meal-history
