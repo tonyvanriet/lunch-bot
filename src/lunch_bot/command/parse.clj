@@ -24,11 +24,12 @@
                      :help   ["help"]
                      :+tax   ["tax" "+tax"]})
 
-(def noun-str-map {:balances ["balances"]
-                   :pay?     ["pay?"]
-                   :payoffs  ["payoffs"]
-                   :history  ["history"]
-                   :ordered? ["ordered?"]})
+(def noun-str-map {:balances      ["balances"]
+                   :pay?          ["pay?"]
+                   :payoffs       ["payoffs"]
+                   :history       ["history"]
+                   :ordered?      ["ordered?"]
+                   :discrepancies ["discrepancy" "discrepancies"]})
 
 (def filler-str-map {:filler ["lunch" "for" "i" "my" "i'm" "on" "have"
                               "the" "what" "who" "should" "+" "plus"]})

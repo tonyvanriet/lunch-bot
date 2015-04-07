@@ -121,6 +121,13 @@
         (talk/person-meal-history person-meals todays-restaurant))
       (str "Somebody needs to choose a restaurant first."))))
 
+(defmethod handle-command [:show :discrepancies]
+  [_ _]
+  (let [meals (build-meals)
+        discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
+    (talk/discrepant-meals-summary discrepant-meals)))
+
+
 (defmethod handle-command [:event nil]
   [cmd msg]
   (let [event (-> (:event cmd)

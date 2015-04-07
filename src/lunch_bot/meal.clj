@@ -97,3 +97,18 @@
        (take n)
        (map #(-> % val :people (get person)))))
 
+
+(defn summary
+  [meal]
+  {:chosen-restaurant-name (-> meal :chosen-restaurant :name)
+   :ins                    (people-in meal)
+   :costless-ins           (filter #(not (person-costed? meal %)) (people-in meal))
+   :buyers                 (people-bought meal)
+   :buyer-surplus          (- (total-bought meal) (total-cost meal))})
+
+
+(defn is-discrepant
+  [meal]
+  (let [{:keys [costless-ins buyers buyer-surplus]} (summary meal)]
+    (or (and (seq buyers) (seq costless-ins))
+        (not (< -3M buyer-surplus 3M)))))

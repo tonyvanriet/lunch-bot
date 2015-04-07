@@ -158,6 +158,20 @@
 
 ; todo separate function creates order summary data structure that gets passed to a formatting function
 
+(defn discrepant-meal-summary
+  [date meal]
+  (let [{:keys [chosen-restaurant-name buyer-surplus] :as summary} (meal/summary meal)]
+    (str date (when chosen-restaurant-name (str ", " chosen-restaurant-name)) ", " buyer-surplus "\n"
+         (apply str (for [in-person-meal (filter #(or (meal/person-in? meal (key %))
+                                                      (meal/person-bought? meal (key %)))
+                                                 (:people meal))]
+                      (str in-person-meal "\n")))
+         "\n")))
+
+(defn discrepant-meals-summary
+  [meals]
+  (apply str (for [date-meal (sort-by key meals)]
+               (discrepant-meal-summary (key date-meal) (val date-meal)))))
 
 
 (defn person-meal->str
