@@ -58,14 +58,14 @@
   [word]
   (let [cleaned-word (-> word (str/trim) (str/lower-case))
         action-keyword (parse/word->action cleaned-word)
-        elements [[action-keyword action-keyword]
-                  [:noun (parse/word->noun cleaned-word)]
-                  [:user (parse/word->user-id cleaned-word)]
-                  [:amount (parse/word->amount cleaned-word)]
-                  [:date (parse/word->date cleaned-word)]
-                  [:restaurant (parse/word->restaurant cleaned-word)]
-                  [:food (parse/word->food word)]
-                  [:filler (parse/word->filler cleaned-word)]]]
+        elements (-> [[action-keyword action-keyword]
+                      [:noun (parse/word->noun cleaned-word)]
+                      [:user (parse/word->user-id cleaned-word)]
+                      [:amount (parse/word->amount cleaned-word)]
+                      [:date (parse/word->date cleaned-word)]
+                      [:food (parse/word->food word)]
+                      [:filler (parse/word->filler cleaned-word)]]
+                     (concat (map #(vector :restaurant %) (parse/word->restaurants cleaned-word))))]
     (filter second elements)))
 
 

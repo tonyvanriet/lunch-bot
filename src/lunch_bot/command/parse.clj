@@ -102,6 +102,7 @@
 
 
 (def ^:private restaurants (atom []))
+; todo restaurant state passed in from core
 (swap! restaurants
        (fn [_] (map #(hash-map :name %) ["BW3" "Chipotle" "Portillo's" "Elephant" "Smoque"
                                          "Superdawg" "Naf Naf" "Makisu" "Jimmy John's" "Potbelly"
@@ -112,13 +113,13 @@
              (str/lower-case)
              (str/replace #"\W" "")))
 
-(defn word->restaurant
-  "returns the first restaurant for which a word in the name starts with the given word"
+(defn word->restaurants
+  "returns the restaurants for which a word in the name starts with the given word"
   [word]
   (let [norm-word (normalize-restaurant-word word)]
-    (first (filter (fn [w] (->> (:name w)
-                                (text->words)
-                                (map normalize-restaurant-word)
-                                (some #(.startsWith % norm-word))))
-                   @restaurants))))
+    (filter (fn [w] (->> (:name w)
+                         (text->words)
+                         (map normalize-restaurant-word)
+                         (some #(.startsWith % norm-word))))
+            @restaurants)))
 
