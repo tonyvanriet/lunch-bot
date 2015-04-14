@@ -60,6 +60,21 @@
     (dissoc-in taxed-event [:+tax?])))
 
 
+(defn process-event
+  [event]
+  ; todo if :out and person has a cost for this meal, create an event to reverse that cost
+  (when (= (:type event) :choose)
+    (let [restaurant (:restaurant event)
+          channel-id (get-lunch-channel-id)]
+      (web/channels-setTopic *api-token* channel-id
+                             (str "ordering " (:name restaurant))))))
+
+(defn commit-event
+  [event]
+  (swap! events (fn [events] (conj events event)))
+  (store/write-events @events events-filename))
+
+
 (defn dispatch-handle-command [cmd msg] ((juxt :command-type :info-type) cmd))
 
 (defmulti handle-command
@@ -129,14 +144,8 @@
   (let [event (-> (:event cmd)
                   (contextualize-event msg)
                   (apply-sales-tax))]
-    (swap! events (fn [events] (conj events event)))
-    (store/write-events @events events-filename)
-    (when (= (:type event) :choose)
-      (let [restaurant (:restaurant event)
-            channel-id (get-lunch-channel-id)]
-        (web/channels-setTopic *api-token* channel-id
-                               (str "ordering " (:name restaurant)))))
-    ; todo if :out and person has a cost for this meal, create money-event to retract that cost
+    (process-event event)
+    (commit-event event)
     (talk/event->reply-str event)))
 
 
