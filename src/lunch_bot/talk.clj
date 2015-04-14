@@ -118,10 +118,7 @@
 
 (defn pre-order-summary
   [meal]
-  (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)
-        ins (meal/people-in meal)
-        outs (meal/people-out meal)
-        orderless-ins (filter #(not (meal/person-ordered? meal %)) ins)]
+  (let [{:keys [chosen-restaurant-name ins outs orderless-ins]} (meal/summary meal)]
     (str (if chosen-restaurant-name
            (str "Ordering " chosen-restaurant-name "\n")
            (str "Waiting for somebody to choose a restaurant" "\n"))
@@ -137,14 +134,10 @@
 
 (defn post-order-summary
   [meal]
-  (let [chosen-restaurant-name (-> meal :chosen-restaurant :name)
-        ins (meal/people-in meal)
+  (let [{:keys [chosen-restaurant-name ins costless-ins buyers buyer-surplus]} (meal/summary meal)
         multiple-ins? (> (count ins) 1)
-        buyers (meal/people-bought meal)
         buyers-str (people->str buyers)
-        multiple-buyers? (> (count buyers) 1)
-        costless-ins (filter #(not (meal/person-costed? meal %)) ins)
-        buyer-surplus (- (meal/total-bought meal) (meal/total-cost meal))]
+        multiple-buyers? (> (count buyers) 1)]
     (str (if chosen-restaurant-name
            (str "Ordered from " chosen-restaurant-name)
            (str "No restaurant chosen")) "\n"
@@ -161,7 +154,6 @@
                       (> buyer-surplus 0M) (str " " buyer-surplus " short"))
                 "\n")))))
 
-; todo separate function creates order summary data structure that gets passed to a formatting function
 
 (defn discrepant-meal-summary
   [date meal]

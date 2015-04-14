@@ -100,11 +100,13 @@
 
 (defn summary
   [meal]
-  {:chosen-restaurant-name (-> meal :chosen-restaurant :name)
-   :ins                    (people-in meal)
-   :costless-ins           (filter #(not (person-costed? meal %)) (people-in meal))
-   :buyers                 (people-bought meal)
-   :buyer-surplus          (- (total-bought meal) (total-cost meal))})
+  (let [ins (people-in meal)]
+    {:chosen-restaurant-name (-> meal :chosen-restaurant :name)
+     :ins                    ins
+     :orderless-ins          (filter #(not (person-ordered? meal %)) ins)
+     :costless-ins           (filter #(not (person-costed? meal %)) ins)
+     :buyers                 (people-bought meal)
+     :buyer-surplus          (- (total-bought meal) (total-cost meal))}))
 
 
 (defn is-discrepant
