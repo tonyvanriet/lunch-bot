@@ -101,8 +101,8 @@
   (case (:type event)
     (:paid :bought :cost :should-pay) (event->str event)
     :choose nil
-    :in (str (rand-nth [":metal:" ":rocket:" ":clap:" ":thumbsup:" ":dancers:"]))
-    :out (str (rand-nth [":fu:" ":fire:" ":facepunch:" ":thumbsdown:" ":hankey:"]))
+    :in (str (rand-nth [":metal:" ":rocket:" ":clap:" ":thumbsup:" ":dancers:" ":facepunch:"]))
+    :out (str (rand-nth [":fu:" ":fire:" ":thumbsdown:" ":hankey:"]))
     :order (str "mmm")))
 
 
