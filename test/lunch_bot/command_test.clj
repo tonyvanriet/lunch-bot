@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [lunch-bot.command :refer :all]
             [lunch-bot.command.parse :refer :all]
-            [clj-time.core :as time]))
+            [clj-time.core :as time]
+            [clj-slack-client.team-state :as team]))
 
 
 (deftest process-command-paid-reply-correct
@@ -10,11 +11,12 @@
         recipient "U2345"
         amount 34.5M
         text (str "paid <@" recipient "> " amount)]
-    (is (= (command-text->command text) {:command-type :event
-                                         :event        {:type   :paid
-                                                        :amount amount
-                                                        :to     recipient
-                                                        :date   (time/today)}}))))
+    (with-redefs [team/name->id (fn [name] name)]
+      (is (= (command-text->command text) {:command-type :event
+                                           :event        {:type   :paid
+                                                          :amount amount
+                                                          :to     recipient
+                                                          :date   (time/today)}})))))
 
 
 (deftest process-command-unrecognized-reply-correct

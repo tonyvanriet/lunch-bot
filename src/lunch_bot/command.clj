@@ -60,7 +60,7 @@
         action-keyword (parse/word->action cleaned-word)
         elements (-> [[action-keyword action-keyword]
                       [:noun (parse/word->noun cleaned-word)]
-                      [:user (parse/word->user-id cleaned-word)]
+                      [:user (parse/word->user-id word)]
                       [:amount (parse/word->amount cleaned-word)]
                       [:date (parse/word->date cleaned-word)]
                       [:food (parse/word->food word)]
