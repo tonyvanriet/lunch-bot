@@ -86,9 +86,9 @@
   (str-coll (map event->str events)))
 
 
-(defn recent-money-history [events]
+(defn recent-money-history [money-events]
   (let [min-date (time/minus (time/today) (time/days 7))
-        recent-events (filter #(time/after? (:date %) min-date) events)
+        recent-events (filter #(time/after? (:date %) min-date) money-events)
         recent-events-sorted (sort-by :date recent-events)]
     (if (seq recent-events-sorted)
       (str "History as of " min-date "\n"

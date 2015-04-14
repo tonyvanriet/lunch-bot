@@ -1,6 +1,12 @@
 (ns lunch-bot.money)
 
 
+(defn money-event?
+  "returns a truthy value if the event is a money transaction that should
+  effect the balances."
+  [event]
+  (some #(= (:type event) %) [:bought :cost :paid]))
+
 (defn balance-change
   [person amount]
   {:person person :amount amount})

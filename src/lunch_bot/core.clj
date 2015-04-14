@@ -97,6 +97,7 @@
 (defmethod handle-command [:show :history]
   [_ _]
   (->> @events
+       (filter money/money-event?)
        (talk/recent-money-history)))
 
 (defmethod handle-command [:show :meal-summary]
