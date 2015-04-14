@@ -188,8 +188,10 @@
 
 (defn person-meal-history
   [person-meals restaurant]
-  (apply str "Your latest orders for " (:name restaurant) "\n"
-         (map person-meal->str person-meals)))
+  (if (seq person-meals)
+    (apply str "Your latest orders for " (:name restaurant) "\n"
+           (map person-meal->str person-meals))
+    (str "You haven't ordered from " (:name restaurant))))
 
 
 (defn say-message
