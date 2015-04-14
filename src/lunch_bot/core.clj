@@ -19,32 +19,27 @@
 ; config
 ;
 (def api-token-filename "api-token.txt")
-(def money-events-filename "money-events.edn")
+(def events-filename "events.edn")
 (def meal-events-filename "meal-events.edn")
 (def lunch-channel-name "lunch")
 (def sales-tax-rate 0.0925M)
 
 (def ^:dynamic *api-token* nil)
 
-(def ^:private money-events (atom []))
+(def ^:private events (atom []))
 
-(defn initialize-money-events []
-  (swap! money-events (fn [_] (into [] (store/read-events money-events-filename)))))
-
-(def ^:private meal-events (atom []))
-
-(defn initialize-meal-events []
-  (swap! meal-events (fn [_] (into [] (store/read-events meal-events-filename)))))
+(defn initialize-events []
+  (swap! events (fn [_] (into [] (store/read-events events-filename)))))
 
 
 (defn get-lunch-channel-id [] (:id (state/name->channel lunch-channel-name)))
 
 
 (defn build-balances []
-  (money/events->balances @money-events))
+  (money/events->balances @events))
 
 (defn build-meals []
-  (->> (concat @money-events @meal-events)
+  (->> @events
        (sort-by :ts)
        (meal/events->meals)))
 
@@ -101,7 +96,7 @@
 
 (defmethod handle-command [:show :history]
   [_ _]
-  (->> @money-events
+  (->> @events
        (talk/recent-money-history)))
 
 (defmethod handle-command [:show :meal-summary]
@@ -133,15 +128,8 @@
   (let [event (-> (:event cmd)
                   (contextualize-event msg)
                   (apply-sales-tax))]
-    (swap! money-events (fn [events] (conj events event)))
-    (store/write-events @money-events money-events-filename)
-    (talk/event->reply-str event)))
-
-(defmethod handle-command [:meal-event nil]
-  [cmd msg]
-  (let [event (contextualize-event (:meal-event cmd) msg)]
-    (swap! meal-events (fn [events] (conj events event)))
-    (store/write-events @meal-events meal-events-filename)
+    (swap! events (fn [events] (conj events event)))
+    (store/write-events @events events-filename)
     (when (= (:type event) :choose)
       (let [restaurant (:restaurant event)
             channel-id (get-lunch-channel-id)]
@@ -198,8 +186,7 @@
    (start (store/read-api-token api-token-filename)))
   ([api-token]
    (try
-     (initialize-money-events)
-     (initialize-meal-events)
+     (initialize-events)
      (alter-var-root (var *api-token*) (fn [_] api-token))
      (slack/connect *api-token* handle-slack-event)
      (prn "lunch-bot running...")

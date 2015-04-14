@@ -104,21 +104,21 @@
 
 (defn command-meal-event
   [action-type]
-  {:command-type :meal-event
-   :meal-event   {:type action-type
+  {:command-type :event
+   :event        {:type action-type
                   :date (time/today)}})
 
 (defn command-meal-event-restaurant
   [action-type restaurant]
-  {:command-type :meal-event
-   :meal-event   {:type       action-type
+  {:command-type :event
+   :event        {:type       action-type
                   :restaurant restaurant
                   :date       (time/today)}})
 
 (defn command-meal-event-food
   [action-type food]
-  {:command-type :meal-event
-   :meal-event   {:type action-type
+  {:command-type :event
+   :event        {:type action-type
                   :food food
                   :date (time/today)}})
 

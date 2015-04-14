@@ -18,6 +18,7 @@
   [events]
   (->> events
        (map #(event->balance-changes %))
+       (filter identity)
        (flatten)))
 
 
