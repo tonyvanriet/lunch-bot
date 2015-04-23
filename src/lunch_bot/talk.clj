@@ -37,7 +37,7 @@
   (str (str-coll (map #(str (person->str (key %)) " " (val %)) balances)) "\n"
        (let [bal-sum (apply + (vals balances))]
          (cond (= bal-sum 0M) (str "The balances are perfect!")
-               (< bal-sum 0M) (str "We have an extra " bal-sum)
+               (< bal-sum 0M) (str "We have an extra " (* -1 bal-sum))
                (> bal-sum 0M) (str "We're " bal-sum " short")))))
 
 (defn payoffs->str
