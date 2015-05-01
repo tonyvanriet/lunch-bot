@@ -14,7 +14,7 @@ For a full list of commands, ask `lunch-bot` for [`help`](https://github.com/ton
 
 ## Usage
 
-`lunch-bot` is very much under development, though the basic functionality described above is working well.
+`lunch-bot` is very much under development, though the basic functionality described above is working well. I'd love to have more people testing it out. If you're interested, drop me a note and I'd be happy to answer questions.
 
 To use it, you'll have to create a bot user in Slack and put its API token in an `api-token.txt` file at the top-level of the project.
 
