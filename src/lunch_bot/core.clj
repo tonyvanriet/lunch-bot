@@ -20,7 +20,6 @@
 ;
 (def api-token-filename "api-token.txt")
 (def events-filename "events.edn")
-(def meal-events-filename "meal-events.edn")
 (def lunch-channel-name "lunch")
 (def sales-tax-rate 0.0925M)
 
