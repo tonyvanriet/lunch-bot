@@ -97,6 +97,10 @@
   [[action-elem amount-elem +tax-elem]]
   (command-template->command [action-elem (get-default-cost-date-elem) amount-elem +tax-elem]))
 
+(defmethod command-template->command [:cost :amount :+tax :date]
+  [[action-elem amount-elem +tax-elem date-elem]]
+  (command-template->command [action-elem date-elem amount-elem +tax-elem]))
+
 (defmethod command-template->command [:cost :amount]
   [[action-elem amount-elem]]
   (command-template->command [action-elem (get-default-cost-date-elem) amount-elem (get-default-cost-+tax-elem)]))

@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [lunch-bot.command :refer :all]
             [lunch-bot.command.parse :refer :all]
+            [lunch-bot.command.template :refer :all]
             [clj-time.core :as time]
             [clj-slack-client.team-state :as team]))
 
@@ -36,5 +37,25 @@
     "12." nil
     "." nil
     "" nil))
+
+
+(deftest command-realization
+  (let [amount 12.34M
+        date (time/local-date 2015 5 1)
+        expected-command {:command-type :event
+                          :event        {:type   :cost
+                                         :amount amount
+                                         :+tax?  :+tax
+                                         :date   date}}]
+    (testing "cost amount +tax date yields command with cost event"
+      (is (= expected-command (command-template->command [[:cost :cost]
+                                                          [:amount amount]
+                                                          [:+tax :+tax]
+                                                          [:date date]]))))
+    (testing "cost date amount +tax yields command with cost event"
+      (is (= expected-command (command-template->command [[:cost :cost]
+                                                          [:date date]
+                                                          [:amount amount]
+                                                          [:+tax :+tax]]))))))
 
 
