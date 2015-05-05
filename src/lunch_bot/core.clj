@@ -28,7 +28,7 @@
 (def ^:private events (atom []))
 
 (defn initialize-events []
-  (swap! events (fn [_] (into [] (store/read-events events-filename)))))
+  (swap! events (constantly (into [] (store/read-events events-filename)))))
 
 
 (defn get-lunch-channel-id [] (:id (state/name->channel lunch-channel-name)))
@@ -196,7 +196,7 @@
   ([api-token]
    (try
      (initialize-events)
-     (alter-var-root (var *api-token*) (fn [_] api-token))
+     (alter-var-root (var *api-token*) (constantly api-token))
      (slack/connect *api-token* handle-slack-event)
      (prn "lunch-bot running...")
      (catch Exception ex
