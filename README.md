@@ -26,7 +26,4 @@ I plan to add commands for adding and modifying restaurants but currently they a
 
 ## License
 
-Copyright © 2015 Tony van Riet
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Copyright © 2015 Tony van Riet, Distributed under the MIT License
