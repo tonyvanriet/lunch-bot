@@ -10,7 +10,7 @@ lunchbot doesn't bother tracking who owes what to whom. Instead, it's treated as
 
 lunchbot can also gather up orders from each person and provide a summary for whoever is placing the order.
 
-Here's a [walkthrough](doc/walkthrough.md) on how to use lunchbot,  and you can always ask lunchbot for `help` to get a [full list of commands](doc/commands.md).
+Here's a [walkthrough](doc/walkthrough.md) on how to use lunchbot,  and you can always ask lunchbot for `help` to get a [list of commands](doc/commands.md).
 
 lunchbot uses [`clj-slack-client`](https://github.com/tonyvanriet/clj-slack-client) to connect to the Slack Real Time Messaging and Web APIs.
 

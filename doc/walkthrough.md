@@ -5,7 +5,7 @@ Start the day by telling lunchbot if you're in or out for lunch and the restaura
 ![](choose.png "Jon likes rockets")
 
 ---
-Tell lunchbot your order 
+Tell lunchbot your order,
 
 ![](order.png "You don't want to order the bisque")
 
@@ -14,12 +14,11 @@ and when you're ready to call it in, you can bring up a summary.
 ![](today.png "It should be the new hire")
 
 ---
-Tell lunchbot the cost of your lunch.
+Tell lunchbot the cost of your lunch,
 
-![](cost.png "I mean everybody")
+![](cost.png "Scrupulousness is next to cleanliness")
 
----
-If you bought the lunch, tell lunchbot how much you paid as well as the cost of your own lunch.
+and if you bought the lunch, tell lunchbot how much you paid for it.
 
 ![](bought.png "purely hypothetical")
 
