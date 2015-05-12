@@ -48,14 +48,16 @@
                                          :+tax?  :+tax
                                          :date   date}}]
     (testing "cost amount +tax date yields command with cost event"
-      (is (= expected-command (command-template->command [[:cost :cost]
-                                                          [:amount amount]
-                                                          [:+tax :+tax]
-                                                          [:date date]]))))
+      (is (= expected-command
+             (command-template->command [[:cost :cost]
+                                         [:amount amount]
+                                         [:+tax :+tax]
+                                         [:date date]]))))
     (testing "cost date amount +tax yields command with cost event"
-      (is (= expected-command (command-template->command [[:cost :cost]
-                                                          [:date date]
-                                                          [:amount amount]
-                                                          [:+tax :+tax]]))))))
+      (is (= expected-command
+             (command-template->command [[:cost :cost]
+                                         [:date date]
+                                         [:amount amount]
+                                         [:+tax :+tax]]))))))
 
 

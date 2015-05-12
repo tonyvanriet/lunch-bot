@@ -85,7 +85,7 @@
   [relative-date]
   (case relative-date
     :today (time/today)
-    :yesterday (time/minus (time/today) (time/days 1))      ; tc/yesterday returns (now - 1 day) as a DateTime
+    :yesterday (time/minus (time/today) (time/days 1))      ; time/yesterday would return (now - 1 day) as a DateTime
     :default nil))
 
 (defn word->date
