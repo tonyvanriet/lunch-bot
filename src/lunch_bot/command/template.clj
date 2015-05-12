@@ -133,10 +133,6 @@
   [[[_ action-type]]]
   (command-meal-event action-type))
 
-(defmethod command-template->command [:want :restaurant]
-  [[[_ action-type] [_ restaurant]]]
-  (command-meal-event-restaurant action-type restaurant))
-
 (defmethod command-template->command [:choose :restaurant]
   [[[_ action-type] [_ restaurant]]]
   (command-meal-event-restaurant action-type restaurant))
