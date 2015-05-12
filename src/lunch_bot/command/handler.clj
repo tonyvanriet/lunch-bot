@@ -9,6 +9,8 @@
           #'dispatch-command->events)
 
 
+(defmethod command->events :default [_ _] nil)
+
 (defmethod command->events :submit-payment
   [{:keys [amount to date] :as cmd} _]
   [{:type   :paid

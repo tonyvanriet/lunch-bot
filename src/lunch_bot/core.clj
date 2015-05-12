@@ -75,23 +75,6 @@
   (store/write-events @events events-filename))
 
 
-(defn handle-command-events
-  [cmd msg]
-  (let [new-events (handler/command->events cmd @events)
-        conditioned-events (map #(-> %
-                                     (contextualize-event msg)
-                                     (apply-sales-tax))
-                                new-events)]
-    (doseq [event conditioned-events]
-      (process-event event)
-      (commit-event event))
-    (when (seq conditioned-events)
-      (->> conditioned-events
-           (map talk/event->reply-str)
-           (interpose "\n")
-           (apply str)))))
-
-
 (defn dispatch-handle-command [cmd msg] ((juxt :command-type :info-type) cmd))
 
 (defmulti handle-command
@@ -155,33 +138,28 @@
         discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
     (talk/discrepant-meals-summary discrepant-meals)))
 
-(defmethod handle-command [:submit-payment nil]
-  [cmd msg]
-  (handle-command-events cmd msg))
 
-(defmethod handle-command [:submit-bought nil]
-  [cmd msg]
-  (handle-command-events cmd msg))
-
-(defmethod handle-command [:submit-cost nil]
-  [cmd msg]
-  (handle-command-events cmd msg))
-
-(defmethod handle-command [:declare-in nil]
-  [cmd msg]
-  (handle-command-events cmd msg))
-
-(defmethod handle-command [:declare-out nil]
-  [cmd msg]
-  (handle-command-events cmd msg))
-
-(defmethod handle-command [:choose-restaurant nil]
-  [cmd msg]
-  (handle-command-events cmd msg))
-
-(defmethod handle-command [:submit-order nil]
-  [cmd msg]
-  (handle-command-events cmd msg))
+(defn handle-message
+  [{channel-id :channel, text :text, :as msg}]
+  (when-let [cmd-text (command/message->command-text channel-id text)]
+    (let [cmd (command/command-text->command cmd-text)]
+      (if-let [raw-new-events (handler/command->events cmd @events)]
+        (let [new-events (map #(-> %
+                                   (contextualize-event msg)
+                                   (apply-sales-tax))
+                              raw-new-events)
+              reply (when (seq new-events)
+                      (->> new-events
+                           (map talk/event->reply-str)
+                           (interpose "\n")
+                           (apply str)))]
+          (doseq [event new-events]
+            (process-event event)
+            (commit-event event))
+          (when reply
+            (talk/say-message channel-id reply)))
+        (let [reply (handle-command cmd msg)]
+          (talk/say-message channel-id reply))))))
 
 
 (defn dispatch-handle-slack-event [event] ((juxt :type :subtype) event))
@@ -189,13 +167,9 @@
 (defmulti handle-slack-event #'dispatch-handle-slack-event)
 
 (defmethod handle-slack-event ["message" nil]
-  [{channel-id :channel, user-id :user, text :text, :as msg}]
+  [{user-id :user, :as msg}]
   (when (not (state/bot? user-id))
-    (when-let [cmd-text (command/message->command-text channel-id text)]
-      (let [cmd (command/command-text->command cmd-text)
-            cmd-reply (handle-command cmd msg)]
-        (when cmd-reply
-          (talk/say-message channel-id cmd-reply))))))
+    (handle-message msg)))
 
 (defmethod handle-slack-event ["message" "message_changed"]
   [{channel-id :channel, {text :text} :message}]
