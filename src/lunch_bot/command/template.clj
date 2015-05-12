@@ -42,12 +42,11 @@
 ; paid templates
 ;
 (defmethod command-template->command [:paid :user :amount]
-  [[[_ action-type] [_ user-id] [_ amount]]]
-  {:command-type :event
-   :event        {:type   action-type
-                  :amount amount
-                  :to     user-id
-                  :date   (time/today)}})
+  [[[_ _] [_ user-id] [_ amount]]]
+  {:command-type :add-payment
+   :amount       amount
+   :to           user-id
+   :date         (time/today)})
 
 (defmethod command-template->command [:paid :amount :user]
   [[action-elem amount-elem user-elem]]

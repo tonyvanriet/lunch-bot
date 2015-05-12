@@ -7,6 +7,7 @@
      [talk :as talk]
      [store :as store]
      [meal :as meal]]
+    [lunch-bot.command.handler :as handler]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
@@ -137,6 +138,18 @@
         discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
     (talk/discrepant-meals-summary discrepant-meals)))
 
+(defmethod handle-command [:add-payment nil]
+  [cmd msg]
+  (let [new-events (handler/command->events cmd @events)
+        conditioned-events (map #(-> %
+                                     (contextualize-event msg)
+                                     (apply-sales-tax))
+                                new-events)]
+    (doseq [event conditioned-events]
+      (process-event event)
+      (commit-event event))
+    (when (seq conditioned-events)
+      (talk/events->str conditioned-events))))
 
 (defmethod handle-command [:event nil]
   [cmd msg]
