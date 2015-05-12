@@ -75,6 +75,23 @@
   (store/write-events @events events-filename))
 
 
+(defn handle-command-events
+  [cmd msg]
+  (let [new-events (handler/command->events cmd @events)
+        conditioned-events (map #(-> %
+                                     (contextualize-event msg)
+                                     (apply-sales-tax))
+                                new-events)]
+    (doseq [event conditioned-events]
+      (process-event event)
+      (commit-event event))
+    (when (seq conditioned-events)
+      (->> conditioned-events
+           (map talk/event->reply-str)
+           (interpose "\n")
+           (apply str)))))
+
+
 (defn dispatch-handle-command [cmd msg] ((juxt :command-type :info-type) cmd))
 
 (defmulti handle-command
@@ -138,27 +155,33 @@
         discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
     (talk/discrepant-meals-summary discrepant-meals)))
 
-(defmethod handle-command [:add-payment nil]
+(defmethod handle-command [:submit-payment nil]
   [cmd msg]
-  (let [new-events (handler/command->events cmd @events)
-        conditioned-events (map #(-> %
-                                     (contextualize-event msg)
-                                     (apply-sales-tax))
-                                new-events)]
-    (doseq [event conditioned-events]
-      (process-event event)
-      (commit-event event))
-    (when (seq conditioned-events)
-      (talk/events->str conditioned-events))))
+  (handle-command-events cmd msg))
 
-(defmethod handle-command [:event nil]
+(defmethod handle-command [:submit-bought nil]
   [cmd msg]
-  (let [event (-> (:event cmd)
-                  (contextualize-event msg)
-                  (apply-sales-tax))]
-    (process-event event)
-    (commit-event event)
-    (talk/event->reply-str event)))
+  (handle-command-events cmd msg))
+
+(defmethod handle-command [:submit-cost nil]
+  [cmd msg]
+  (handle-command-events cmd msg))
+
+(defmethod handle-command [:declare-in nil]
+  [cmd msg]
+  (handle-command-events cmd msg))
+
+(defmethod handle-command [:declare-out nil]
+  [cmd msg]
+  (handle-command-events cmd msg))
+
+(defmethod handle-command [:choose-restaurant nil]
+  [cmd msg]
+  (handle-command-events cmd msg))
+
+(defmethod handle-command [:submit-order nil]
+  [cmd msg]
+  (handle-command-events cmd msg))
 
 
 (defn dispatch-handle-slack-event [event] ((juxt :type :subtype) event))
