@@ -3,18 +3,14 @@
   (:require
     [lunch-bot
      [command :as command]
-     [money :as money]
      [talk :as talk]
      [store :as store]
-     [meal :as meal]
-     [event :as event]
-     [aggregate :as agg]]
+     [event :as event]]
     [lunch-bot.command.handler :as handler]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
      [web :as web]]
-    [clj-time.core :as time]
     [clojure.core.incubator :refer [dissoc-in]])
   (:import (java.math RoundingMode)))
 
@@ -57,92 +53,22 @@
                              (str "ordering " (:name restaurant))))))
 
 
-(defn dispatch-handle-command [cmd msg] ((juxt :command-type :info-type) cmd))
-
-(defmulti handle-command
-          "performs the computation specified by the command and returns a
-          reply string, if any."
-          #'dispatch-handle-command)
-
-(defmethod handle-command [:unrecognized nil]
-  [_ _]
-  "huh?")
-
-(defmethod handle-command [:help nil]
-  [_ _]
-  (slurp "help.md"))
-
-(defmethod handle-command [:show :balances]
-  [_ _]
-  (->> (agg/balances)
-       (money/sort-balances)
-       (reverse)
-       (talk/balances->str)))
-
-(defmethod handle-command [:show :pay?]
-  [_ {requestor :user}]
-  (if-let [payment (money/best-payment requestor (agg/balances))]
-    (talk/event->str payment)
-    (str "Keep your money.")))
-
-(defmethod handle-command [:show :payoffs]
-  [_ _]
-  (->> (agg/balances)
-       (money/minimal-payoffs)
-       (talk/payoffs->str)))
-
-(defmethod handle-command [:show :history]
-  [_ _]
-  (->> (agg/money-events)
-       (talk/recent-money-history)))
-
-(defmethod handle-command [:show :meal-summary]
-  [{:keys [date] :as cmd} _]
-  (let [meals (agg/meals)
-        meal (get meals date)]
-    (if (or (time/before? date (time/today)) (meal/any-bought? meal))
-      (talk/post-order-summary meal)
-      (talk/pre-order-summary meal))))
-
-(defmethod handle-command [:show :ordered?]
-  [_ {requestor :user}]
-  (let [meals (agg/meals)
-        todays-meal (get meals (time/today))]
-    (if-let [todays-restaurant (-> todays-meal :chosen-restaurant)]
-      (let [person-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
-        (talk/person-meal-history person-meals todays-restaurant))
-      (str "Somebody needs to choose a restaurant first."))))
-
-(defmethod handle-command [:show :discrepancies]
-  [_ _]
-  (let [meals (agg/meals)
-        discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
-    (talk/discrepant-meals-summary discrepant-meals)))
-
-
 (defn handle-message
   [{channel-id :channel, text :text, :as msg}]
   (when-let [cmd-text (command/message->command-text channel-id text)]
     ; transform message into command
-    (let [cmd (command/command-text->command cmd-text)]
-      ; transform command into events
-      (if-let [raw-new-events (handler/command->events cmd)]
-        (let [new-events (map #(-> %
-                                   (contextualize-event msg)
-                                   (apply-sales-tax))
-                              raw-new-events)
-              reply (when (seq new-events)
-                      (->> new-events
-                           (map talk/event->reply-str)
-                           (interpose "\n")
-                           (apply str)))]
-          (doseq [event new-events]
-            (process-event event)
-            (event/commit-event event))
-          (when reply
-            (talk/say-message channel-id reply)))
-        (let [reply (handle-command cmd msg)]
-          (talk/say-message channel-id reply))))))
+    (let [cmd (command/command-text->command cmd-text)
+          raw-new-events (handler/command->events cmd)
+          new-events (map #(-> %
+                               (contextualize-event msg)
+                               (apply-sales-tax))
+                          raw-new-events)
+          reply (handler/command->reply cmd msg new-events)]
+      (doseq [event new-events]
+        (process-event event)
+        (event/commit-event event))
+      (when reply
+        (talk/say-message channel-id reply)))))
 
 
 (defn dispatch-handle-slack-event [event] ((juxt :type :subtype) event))
