@@ -6,7 +6,9 @@
      [money :as money]
      [talk :as talk]
      [store :as store]
-     [meal :as meal]]
+     [meal :as meal]
+     [event :as event]
+     [aggregate :as agg]]
     [lunch-bot.command.handler :as handler]
     [clj-slack-client
      [core :as slack]
@@ -20,28 +22,13 @@
 ; config
 ;
 (def api-token-filename "api-token.txt")
-(def events-filename "events.edn")
 (def lunch-channel-name "lunch")
 (def sales-tax-rate 0.0925M)
 
 (def ^:dynamic *api-token* nil)
 
-(def ^:private events (atom []))
-
-(defn initialize-events []
-  (swap! events (constantly (into [] (store/read-events events-filename)))))
-
 
 (defn get-lunch-channel-id [] (:id (state/name->channel lunch-channel-name)))
-
-
-(defn build-balances []
-  (money/events->balances @events))
-
-(defn build-meals []
-  (->> @events
-       (sort-by :ts)
-       (meal/events->meals)))
 
 
 (defn contextualize-event
@@ -69,11 +56,6 @@
       (web/channels-setTopic *api-token* channel-id
                              (str "ordering " (:name restaurant))))))
 
-(defn commit-event
-  [event]
-  (swap! events (fn [events] (conj events event)))
-  (store/write-events @events events-filename))
-
 
 (defn dispatch-handle-command [cmd msg] ((juxt :command-type :info-type) cmd))
 
@@ -92,32 +74,31 @@
 
 (defmethod handle-command [:show :balances]
   [_ _]
-  (->> (build-balances)
+  (->> (agg/balances)
        (money/sort-balances)
        (reverse)
        (talk/balances->str)))
 
 (defmethod handle-command [:show :pay?]
   [_ {requestor :user}]
-  (if-let [payment (money/best-payment requestor (build-balances))]
+  (if-let [payment (money/best-payment requestor (agg/balances))]
     (talk/event->str payment)
     (str "Keep your money.")))
 
 (defmethod handle-command [:show :payoffs]
   [_ _]
-  (->> (build-balances)
+  (->> (agg/balances)
        (money/minimal-payoffs)
        (talk/payoffs->str)))
 
 (defmethod handle-command [:show :history]
   [_ _]
-  (->> @events
-       (filter money/money-event?)
+  (->> (agg/money-events)
        (talk/recent-money-history)))
 
 (defmethod handle-command [:show :meal-summary]
   [{:keys [date] :as cmd} _]
-  (let [meals (build-meals)
+  (let [meals (agg/meals)
         meal (get meals date)]
     (if (or (time/before? date (time/today)) (meal/any-bought? meal))
       (talk/post-order-summary meal)
@@ -125,7 +106,7 @@
 
 (defmethod handle-command [:show :ordered?]
   [_ {requestor :user}]
-  (let [meals (build-meals)
+  (let [meals (agg/meals)
         todays-meal (get meals (time/today))]
     (if-let [todays-restaurant (-> todays-meal :chosen-restaurant)]
       (let [person-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
@@ -134,7 +115,7 @@
 
 (defmethod handle-command [:show :discrepancies]
   [_ _]
-  (let [meals (build-meals)
+  (let [meals (agg/meals)
         discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
     (talk/discrepant-meals-summary discrepant-meals)))
 
@@ -142,8 +123,10 @@
 (defn handle-message
   [{channel-id :channel, text :text, :as msg}]
   (when-let [cmd-text (command/message->command-text channel-id text)]
+    ; transform message into command
     (let [cmd (command/command-text->command cmd-text)]
-      (if-let [raw-new-events (handler/command->events cmd @events)]
+      ; transform command into events
+      (if-let [raw-new-events (handler/command->events cmd)]
         (let [new-events (map #(-> %
                                    (contextualize-event msg)
                                    (apply-sales-tax))
@@ -155,7 +138,7 @@
                            (apply str)))]
           (doseq [event new-events]
             (process-event event)
-            (commit-event event))
+            (event/commit-event event))
           (when reply
             (talk/say-message channel-id reply)))
         (let [reply (handle-command cmd msg)]
@@ -205,7 +188,7 @@
    (start (store/read-api-token api-token-filename)))
   ([api-token]
    (try
-     (initialize-events)
+     (event/initialize-events)
      (alter-var-root (var *api-token*) (constantly api-token))
      (slack/connect *api-token* handle-slack-event)
      (prn "lunch-bot running...")
