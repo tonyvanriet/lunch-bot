@@ -13,11 +13,10 @@
         amount 34.5M
         text (str "paid <@" recipient "> " amount)]
     (with-redefs [team/name->id (fn [name] name)]
-      (is (= (command-text->command text) {:command-type :event
-                                           :event        {:type   :paid
-                                                          :amount amount
-                                                          :to     recipient
-                                                          :date   (time/today)}})))))
+      (is (= (command-text->command text) {:command-type :submit-payment
+                                           :amount       amount
+                                           :to           recipient
+                                           :date         (time/today)})))))
 
 
 (deftest process-command-unrecognized-reply-correct
@@ -42,11 +41,10 @@
 (deftest command-realization
   (let [amount 12.34M
         date (time/local-date 2015 5 1)
-        expected-command {:command-type :event
-                          :event        {:type   :cost
-                                         :amount amount
-                                         :+tax?  :+tax
-                                         :date   date}}]
+        expected-command {:command-type :submit-cost
+                          :amount       amount
+                          :+tax?        :+tax
+                          :date         date}]
     (testing "cost amount +tax date yields command with cost event"
       (is (= expected-command
              (command-template->command [[:cost :cost]
