@@ -34,8 +34,10 @@
    and then removes :+tax?"
   [event sales-tax-rate]
   (let [taxed-event (if (:+tax? event)
-                      (update-in event [:amount] #(-> (* % (+ 1 sales-tax-rate))
-                                                      (.setScale 2 RoundingMode/HALF_UP)))
+                      (-> event
+                          (assoc :pretax-amount (:amount event))
+                          (update-in [:amount] #(-> (* % (+ 1 sales-tax-rate))
+                                                    (.setScale 2 RoundingMode/HALF_UP))))
                       event)]
     (dissoc-in taxed-event [:+tax?])))
 
