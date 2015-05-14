@@ -5,7 +5,7 @@
 (def events-filename "events.edn")
 
 
-(def committed-events (atom []))
+(def ^:private committed-events (atom []))
 
 
 (defn initialize-events []
@@ -16,3 +16,7 @@
   [event]
   (swap! committed-events #(conj % event))
   (store/write-events @committed-events events-filename))
+
+
+(defn get-committed-events []
+  @committed-events)

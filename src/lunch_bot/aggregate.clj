@@ -6,21 +6,21 @@
 
 
 (defn balances []
-  (money/events->balances @event/committed-events))
+  (money/events->balances (event/get-committed-events)))
 
 
 (defn meals []
-  (->> @event/committed-events
+  (->> (event/get-committed-events)
        (sort-by :ts)
        (meal/events->meals)))
 
 
 (defn money-events []
-  (filter money/money-event? @event/committed-events))
+  (filter money/money-event? (event/get-committed-events)))
 
 
 (defn get-aggregates []
-  {:committed-events event/committed-events
+  {:committed-events (event/get-committed-events)
    :balances         (balances)
    :meals            (meals)
    :money-events     (money-events)})
