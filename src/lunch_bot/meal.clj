@@ -50,6 +50,10 @@
   [meals {:keys [date person amount] :as event}]
   (update-in meals [date :people person :bought] (fnil + 0) amount))
 
+(defmethod apply-event-to-meals :unbought
+  [meals {:keys [date person] :as event}]
+  (dissoc-in meals [date :people person :bought]))
+
 (defmethod apply-event-to-meals :cost
   [meals {:keys [date person amount] :as event}]
   (-> meals

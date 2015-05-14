@@ -59,11 +59,21 @@
            :date   date})])
 
 (defmethod command->events :submit-bought
-  [{:keys [amount date] :as cmd} _]
-  [(merge (base-command-event cmd)
-          {:type   :bought
-           :amount amount
-           :date   date})])
+  [{:keys [amount date requestor] :as cmd} {:keys [meals] :as aggs}]
+  (let [meal (get meals date)
+        previous-bought-amount (get-in meal [:people requestor :bought])
+        unbought-event (when previous-bought-amount
+                         (merge (base-command-event cmd)
+                                {:type   :unbought
+                                 :amount previous-bought-amount
+                                 :date   date}))
+        bought-event (merge (base-command-event cmd)
+                            {:type   :bought
+                             :amount amount
+                             :date   date})]
+    (if unbought-event
+      [unbought-event bought-event]
+      [bought-event])))
 
 (defmethod command->events :submit-cost
   [{:keys [amount date +tax?] :as cmd} _]
@@ -84,17 +94,17 @@
   [{:keys [date requestor] :as cmd} {:keys [meals] :as aggs}]
   (let [meal (get meals date)
         cost-amount (get-in meal [:people requestor :cost])
-        uncost-cmd (when cost-amount
-                     (merge (base-command-event cmd)
-                            {:type   :uncost
-                             :amount cost-amount
-                             :date   date}))
-        out-cmd (merge (base-command-event cmd)
-                       {:type :out
-                        :date date})]
-    (if uncost-cmd
-      [uncost-cmd out-cmd]
-      [out-cmd])))
+        uncost-event (when cost-amount
+                       (merge (base-command-event cmd)
+                              {:type   :uncost
+                               :amount cost-amount
+                               :date   date}))
+        out-event (merge (base-command-event cmd)
+                         {:type :out
+                          :date date})]
+    (if uncost-event
+      [uncost-event out-event]
+      [out-event])))
 
 (defmethod command->events :choose-restaurant
   [{:keys [restaurant date] :as cmd} _]

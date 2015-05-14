@@ -15,6 +15,7 @@
 (defn event->balance-changes
   [{:keys [type person to amount]}]
   (cond (= type :bought) (balance-change person amount)
+        (= type :unbought) (balance-change person (* -1 amount))
         (= type :cost) (balance-change person (* -1 amount))
         (= type :uncost) (balance-change person amount)
         (= type :paid) [(balance-change person amount)
