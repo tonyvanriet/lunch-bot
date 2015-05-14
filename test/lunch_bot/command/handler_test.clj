@@ -28,6 +28,41 @@
         (is (= events [expected-uncost-event expected-out-event]))))))
 
 
+(deftest repeat-cost-retracts-previous-cost
+  (let [today (time/today)
+        person "U1234"
+        first-cost-amount 34.56M]
+    (testing "no previous cost, no retraction"
+      (let [aggs-no-cost {:meals {today {:people {person {:status :in}}}}}
+            first-cost-cmd {:command-type :submit-cost
+                            :amount       first-cost-amount
+                            :date         today
+                            :requestor    person}
+            expected-first-cost-event {:type   :cost
+                                       :amount first-cost-amount
+                                       :date   today
+                                       :person person}
+            events (command->events first-cost-cmd aggs-no-cost)]
+        (is (= events [expected-first-cost-event]))))
+    (testing "second cost command yields retraction event"
+      (let [aggs-cost {:meals {today {:people {person {:status :in, :cost first-cost-amount}}}}}
+            second-cost-amount 45.67M
+            second-cost-cmd {:command-type :submit-cost
+                             :amount       second-cost-amount
+                             :date         today
+                             :requestor    person}
+            expected-uncost-event {:type   :uncost
+                                   :amount first-cost-amount
+                                   :date   today
+                                   :person person}
+            expected-second-cost-event {:type   :cost
+                                        :amount second-cost-amount
+                                        :date   today
+                                        :person person}
+            events (command->events second-cost-cmd aggs-cost)]
+        (is (= events [expected-uncost-event expected-second-cost-event]))))))
+
+
 (deftest repeat-bought-retracts-previous-bought
   (let [today (time/today)
         person "U1234"
@@ -43,8 +78,7 @@
                                          :date   today
                                          :person person}
             events (command->events first-bought-cmd aggs-no-bought)]
-        (is (= events [expected-first-bought-event]))
-        ))
+        (is (= events [expected-first-bought-event]))))
     (testing "second bought command yields retraction event"
       (let [aggs-bought {:meals {today {:people {person {:status :in, :bought first-bought-amount}}}}}
             second-bought-amount 45.67M
@@ -62,3 +96,4 @@
                                           :person person}
             events (command->events second-bought-cmd aggs-bought)]
         (is (= events [expected-unbought-event expected-second-bought-event]))))))
+

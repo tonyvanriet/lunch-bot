@@ -76,13 +76,23 @@
       [bought-event])))
 
 (defmethod command->events :submit-cost
-  [{:keys [amount date +tax?] :as cmd} _]
-  [(-> (base-command-event cmd)
-       (merge {:type   :cost
-               :amount amount
-               :+tax?  +tax?
-               :date   date})
-       (apply-sales-tax sales-tax-rate))])
+  [{:keys [amount +tax? date requestor] :as cmd} {:keys [meals] :as aggs}]
+  (let [meal (get meals date)
+        previous-cost-amount (get-in meal [:people requestor :cost])
+        uncost-event (when previous-cost-amount
+                       (merge (base-command-event cmd)
+                              {:type   :uncost
+                               :amount previous-cost-amount
+                               :date   date}))
+        pretax-cost-event (merge (base-command-event cmd)
+                                 {:type   :cost
+                                  :amount amount
+                                  :+tax?  +tax?
+                                  :date   date})
+        cost-event (apply-sales-tax pretax-cost-event sales-tax-rate)]
+    (if uncost-event
+      [uncost-event cost-event]
+      [cost-event])))
 
 (defmethod command->events :declare-in
   [{:keys [date] :as cmd} _]
