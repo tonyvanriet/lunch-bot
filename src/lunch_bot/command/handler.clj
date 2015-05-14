@@ -22,11 +22,13 @@
   [map key val]
   (assoc-if map key val (fn [k v] (some? v))))
 
-(defn base-command-event
-  [{:keys [requestor ts] :as cmd}]
-  (-> {}
+
+(defn make-event
+  [{:keys [requestor date ts] :as cmd} event-type with-map]
+  (-> {:type event-type}
       (assoc-if-some-val :person requestor)
-      (assoc-if-some-val :ts ts)))
+      (assoc-if-some-val :ts ts)
+      (merge with-map)))
 
 
 (defn apply-sales-tax
@@ -54,25 +56,19 @@
 
 (defmethod command->events :submit-payment
   [{:keys [amount to date] :as cmd} _]
-  [(merge (base-command-event cmd)
-          {:type   :paid
-           :amount amount
-           :to     to
-           :date   date})])
+  [(make-event cmd :paid {:amount amount
+                          :to     to
+                          :date   date})])
 
 (defmethod command->events :submit-bought
   [{:keys [amount date requestor] :as cmd} {:keys [meals] :as aggs}]
   (let [meal (get meals date)
         previous-bought-amount (get-in meal [:people requestor :bought])
         unbought-event (when previous-bought-amount
-                         (merge (base-command-event cmd)
-                                {:type   :unbought
-                                 :amount previous-bought-amount
-                                 :date   date}))
-        bought-event (merge (base-command-event cmd)
-                            {:type   :bought
-                             :amount amount
-                             :date   date})]
+                         (make-event cmd :unbought {:amount previous-bought-amount
+                                                    :date   date}))
+        bought-event (make-event cmd :bought {:amount amount
+                                              :date   date})]
     (if unbought-event
       [unbought-event bought-event]
       [bought-event])))
@@ -82,15 +78,11 @@
   (let [meal (get meals date)
         previous-cost-amount (get-in meal [:people requestor :cost])
         uncost-event (when previous-cost-amount
-                       (merge (base-command-event cmd)
-                              {:type   :uncost
-                               :amount previous-cost-amount
-                               :date   date}))
-        pretax-cost-event (merge (base-command-event cmd)
-                                 {:type   :cost
-                                  :amount amount
-                                  :+tax?  +tax?
-                                  :date   date})
+                       (make-event cmd :uncost {:amount previous-cost-amount
+                                                :date   date}))
+        pretax-cost-event (make-event cmd :cost {:amount amount
+                                                 :+tax?  +tax?
+                                                 :date   date})
         cost-event (apply-sales-tax pretax-cost-event sales-tax-rate)]
     (if uncost-event
       [uncost-event cost-event]
@@ -98,39 +90,29 @@
 
 (defmethod command->events :declare-in
   [{:keys [date] :as cmd} _]
-  [(merge (base-command-event cmd)
-          {:type :in
-           :date date})])
+  [(make-event cmd :in {:date date})])
 
 (defmethod command->events :declare-out
   [{:keys [date requestor] :as cmd} {:keys [meals] :as aggs}]
   (let [meal (get meals date)
         cost-amount (get-in meal [:people requestor :cost])
         uncost-event (when cost-amount
-                       (merge (base-command-event cmd)
-                              {:type   :uncost
-                               :amount cost-amount
-                               :date   date}))
-        out-event (merge (base-command-event cmd)
-                         {:type :out
-                          :date date})]
+                       (make-event cmd :uncost {:amount cost-amount
+                                                :date   date}))
+        out-event (make-event cmd :out {:date date})]
     (if uncost-event
       [uncost-event out-event]
       [out-event])))
 
 (defmethod command->events :choose-restaurant
   [{:keys [restaurant date] :as cmd} _]
-  [(merge (base-command-event cmd)
-          {:type       :choose
-           :restaurant restaurant
-           :date       date})])
+  [(make-event cmd :choose {:restaurant restaurant
+                            :date       date})])
 
 (defmethod command->events :submit-order
   [{:keys [food date] :as cmd} _]
-  [(merge (base-command-event cmd)
-          {:type :order
-           :food food
-           :date date})])
+  [(make-event cmd :order {:food food
+                           :date date})])
 
 
 (defn events->reply
