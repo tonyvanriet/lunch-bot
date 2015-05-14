@@ -25,26 +25,40 @@
 (defn get-lunch-channel-id [] (:id (state/name->channel lunch-channel-name)))
 
 
-(defn process-event
+(defn dispatch-handle-event [event] (:type event))
+
+(defmulti handle-event #'dispatch-handle-event)
+
+(defmethod handle-event :default [_] nil)
+
+(defmethod handle-event :choose
   [event]
-  ; todo if :out and person has a cost for this meal, create an event to reverse that cost
-  (when (= (:type event) :choose)
-    (let [restaurant (:restaurant event)
-          channel-id (get-lunch-channel-id)]
-      (web/channels-setTopic *api-token* channel-id
-                             (str "ordering " (:name restaurant))))))
+  (let [restaurant (:restaurant event)
+        channel-id (get-lunch-channel-id)]
+    (web/channels-setTopic *api-token* channel-id
+                           (str "ordering " (:name restaurant)))))
+
+
+(defn handle-command
+  "translates the command into events, commits the events to the stream,
+  handles the events, and returns a reply."
+  [cmd msg]
+  (let [raw-events (handler/command->events cmd)
+        events (map #(handler/condition-event % msg sales-tax-rate) raw-events)
+        ; todo should this event conditioning be part of command->events?
+        reply (handler/command->reply cmd msg events)]
+    (doseq [event events]
+      (event/commit-event event)
+      (handle-event event))
+    reply))
 
 
 (defn handle-message
+  "translates a slack message into a command, handles that command, and communicates the reply"
   [{channel-id :channel, text :text, :as msg}]
   (when-let [cmd-text (command/message->command-text channel-id text)]
     (let [cmd (command/command-text->command cmd-text)
-          raw-new-events (handler/command->events cmd)
-          new-events (map #(handler/condition-event % msg sales-tax-rate) raw-new-events)
-          reply (handler/command->reply cmd msg new-events)]
-      (doseq [event new-events]
-        (process-event event)
-        (event/commit-event event))
+          reply (handle-command cmd msg)]
       (when reply
         (talk/say-message channel-id reply)))))
 
@@ -125,7 +139,7 @@
 ; todo 'bw3 thursday'
 ; todo restaurant name links to url
 ; todo 'remove superdog', 'rename superdog superdawg'
-; todo 'payoffs' suggests payments that bring everyone to the average balance, handle balances that don't sum to 0
+; todo 'payoffs' suggests payments that bring everyone to the average balance
 ; todo recognize 'steve paid carla 23' for privileged users
 ; todo talk converts person's name to "you" in DMs
 ; todo attempt to interpret multi-line messages as one command per line
