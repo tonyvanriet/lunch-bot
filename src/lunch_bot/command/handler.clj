@@ -4,7 +4,9 @@
     [lunch-bot.aggregate :as agg]
     [lunch-bot.money :as money]
     [lunch-bot.meal :as meal]
-    [clj-time.core :as time]))
+    [clj-time.core :as time]
+    [clojure.core.incubator :refer [dissoc-in]])
+  (:import (java.math RoundingMode)))
 
 
 (defn dispatch-command->events [cmd] (:command-type cmd))
@@ -58,6 +60,28 @@
   [{:type :order
     :food food
     :date date}])
+
+
+(defn contextualize-event
+  "adds slack message context to event"
+  [event {user-id :user, ts :ts, :as msg}]
+  (-> event (assoc :person user-id) (assoc :ts ts)))
+
+(defn apply-sales-tax
+  "applies the sales-tax-rate to the amount if the events :+tax? is truthy,
+   and then removes :+tax?"
+  [event sales-tax-rate]
+  (let [taxed-event (if (:+tax? event)
+                      (update-in event [:amount] #(-> (* % (+ 1 sales-tax-rate))
+                                                      (.setScale 2 RoundingMode/HALF_UP)))
+                      event)]
+    (dissoc-in taxed-event [:+tax?])))
+
+(defn condition-event
+  [event msg sales-tax-rate]
+  (-> event
+      (contextualize-event msg)
+      (apply-sales-tax sales-tax-rate)))
 
 
 (defn events->reply

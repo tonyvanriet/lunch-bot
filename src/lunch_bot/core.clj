@@ -10,9 +10,7 @@
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
-     [web :as web]]
-    [clojure.core.incubator :refer [dissoc-in]])
-  (:import (java.math RoundingMode)))
+     [web :as web]]))
 
 ;
 ; config
@@ -25,22 +23,6 @@
 
 
 (defn get-lunch-channel-id [] (:id (state/name->channel lunch-channel-name)))
-
-
-(defn contextualize-event
-  "adds slack message context to event"
-  [event {user-id :user, ts :ts, :as msg}]
-  (-> event (assoc :person user-id) (assoc :ts ts)))
-
-(defn apply-sales-tax
-  "applies the sales-tax-rate to the amount if the events :+tax? is truthy,
-   and then removes :+tax?"
-  [event]
-  (let [taxed-event (if (:+tax? event)
-                      (update-in event [:amount] #(-> (* % (+ 1 sales-tax-rate))
-                                                      (.setScale 2 RoundingMode/HALF_UP)))
-                      event)]
-    (dissoc-in taxed-event [:+tax?])))
 
 
 (defn process-event
@@ -56,13 +38,9 @@
 (defn handle-message
   [{channel-id :channel, text :text, :as msg}]
   (when-let [cmd-text (command/message->command-text channel-id text)]
-    ; transform message into command
     (let [cmd (command/command-text->command cmd-text)
           raw-new-events (handler/command->events cmd)
-          new-events (map #(-> %
-                               (contextualize-event msg)
-                               (apply-sales-tax))
-                          raw-new-events)
+          new-events (map #(handler/condition-event % msg sales-tax-rate) raw-new-events)
           reply (handler/command->reply cmd msg new-events)]
       (doseq [event new-events]
         (process-event event)
