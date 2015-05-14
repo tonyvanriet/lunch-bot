@@ -31,9 +31,10 @@
     :date   date}])
 
 (defmethod command->events :submit-cost
-  [{:keys [amount date] :as cmd}]
+  [{:keys [amount date +tax?] :as cmd}]
   [{:type   :cost
     :amount amount
+    :+tax?  +tax?
     :date   date}])
 
 (defmethod command->events :declare-in
