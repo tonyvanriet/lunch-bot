@@ -25,10 +25,6 @@
 
 (defmulti apply-event-to-meals #'dispatch-apply-event-to-meals)
 
-(defmethod apply-event-to-meals :want
-  [meals {:keys [date person restaurant] :as event}]
-  (assoc-in meals [date :people person :wants] restaurant))
-
 (defmethod apply-event-to-meals :in
   [meals {:keys [date person] :as event}]
   (assoc-in meals [date :people person :status] :in))
@@ -59,6 +55,10 @@
   (-> meals
       (update-in [date :people person :cost] (fnil + 0) amount)
       (assoc-in [date :people person :status] :in)))
+
+(defmethod apply-event-to-meals :uncost
+  [meals {:keys [date person amount] :as event}]
+  (update-in meals [date :people person :cost] (fnil - 0) amount))
 
 (defmethod apply-event-to-meals :default
   [meal _]

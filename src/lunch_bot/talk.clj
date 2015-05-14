@@ -62,6 +62,10 @@
   (str (person->str person) "'s lunch cost " amount
        (when (not= date (time/today)) (str " on " date))))
 
+(defmethod event->str :uncost [{:keys [person amount date]}]
+  (str "retracted " (person->str person) "'s lunch cost " amount
+       (when (not= date (time/today)) (str " on " date))))
+
 (defmethod event->str :paid [{:keys [person amount to date]}]
   (str (person->str person) " paid " (person->str to) " " amount
        (when (not= date (time/today)) (str " on " date))))
@@ -99,7 +103,7 @@
 (defn event->reply-str
   [event]
   (case (:type event)
-    (:paid :bought :cost :should-pay) (event->str event)
+    (:paid :bought :cost :uncost :should-pay) (event->str event)
     :choose nil
     :in (str (rand-nth [":metal:" ":rocket:" ":clap:" ":thumbsup:" ":dancers:" ":facepunch:"]))
     :out (str (rand-nth [":fu:" ":fire:" ":thumbsdown:" ":hankey:"]))

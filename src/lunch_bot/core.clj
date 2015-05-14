@@ -5,7 +5,8 @@
      [command :as command]
      [talk :as talk]
      [store :as store]
-     [event :as event]]
+     [event :as event]
+     [aggregate :as aggregate]]
     [lunch-bot.command.handler :as handler]
     [clj-slack-client
      [core :as slack]
@@ -17,7 +18,6 @@
 ;
 (def api-token-filename "api-token.txt")
 (def lunch-channel-name "lunch")
-(def sales-tax-rate 0.0925M)
 
 (def ^:dynamic *api-token* nil)
 
@@ -27,7 +27,9 @@
 
 (defn dispatch-handle-event [event] (:type event))
 
-(defmulti handle-event #'dispatch-handle-event)
+(defmulti handle-event
+          "performs side-effects for the event"
+          #'dispatch-handle-event)
 
 (defmethod handle-event :default [_] nil)
 
@@ -42,23 +44,31 @@
 (defn handle-command
   "translates the command into events, commits the events to the stream,
   handles the events, and returns a reply."
-  [cmd msg]
-  (let [raw-events (handler/command->events cmd)
-        events (map #(handler/condition-event % msg sales-tax-rate) raw-events)
-        ; todo should this event conditioning be part of command->events?
-        reply (handler/command->reply cmd msg events)]
+  [cmd]
+  (let [aggs (aggregate/get-aggregates)
+        events (handler/command->events cmd aggs)
+        reply (handler/command->reply cmd events)]
     (doseq [event events]
       (event/commit-event event)
       (handle-event event))
     reply))
 
 
+(defn contextualize-command
+  "apply slack message context to the raw command"
+  [cmd msg]
+  (-> cmd
+      (assoc :requestor (:user msg))
+      (assoc :ts (:ts msg))))
+
+
 (defn handle-message
   "translates a slack message into a command, handles that command, and communicates the reply"
   [{channel-id :channel, text :text, :as msg}]
   (when-let [cmd-text (command/message->command-text channel-id text)]
-    (let [cmd (command/command-text->command cmd-text)
-          reply (handle-command cmd msg)]
+    (let [raw-cmd (command/command-text->command cmd-text)
+          cmd (contextualize-command raw-cmd msg)
+          reply (handle-command cmd)]
       (when reply
         (talk/say-message channel-id reply)))))
 

@@ -5,7 +5,7 @@
   "returns a truthy value if the event is a money transaction that should
   effect the balances."
   [event]
-  (some #(= (:type event) %) [:bought :cost :paid]))
+  (some #(= (:type event) %) [:bought :cost :uncost :paid]))
 
 (defn balance-change
   [person amount]
@@ -16,6 +16,7 @@
   [{:keys [type person to amount]}]
   (cond (= type :bought) (balance-change person amount)
         (= type :cost) (balance-change person (* -1 amount))
+        (= type :uncost) (balance-change person amount)
         (= type :paid) [(balance-change person amount)
                         (balance-change to (* -1 amount))]))
 

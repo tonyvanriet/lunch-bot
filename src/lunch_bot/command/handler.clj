@@ -9,63 +9,25 @@
   (:import (java.math RoundingMode)))
 
 
-(defn dispatch-command->events [cmd] (:command-type cmd))
-
-(defmulti command->events
-          "converts the given command into events that should be committed to
-          the event stream, if any."
-          #'dispatch-command->events)
+(def sales-tax-rate 0.0925M)
 
 
-(defmethod command->events :default [_] nil)
+(defn assoc-if
+  [map key val f]
+  (if (f key val)
+    (assoc map key val)
+    map))
 
-(defmethod command->events :submit-payment
-  [{:keys [amount to date] :as cmd}]
-  [{:type   :paid
-    :amount amount
-    :to     to
-    :date   date}])
+(defn assoc-if-some-val
+  [map key val]
+  (assoc-if map key val (fn [k v] (some? v))))
 
-(defmethod command->events :submit-bought
-  [{:keys [amount date] :as cmd}]
-  [{:type   :bought
-    :amount amount
-    :date   date}])
+(defn base-command-event
+  [{:keys [requestor ts] :as cmd}]
+  (-> {}
+      (assoc-if-some-val :person requestor)
+      (assoc-if-some-val :ts ts)))
 
-(defmethod command->events :submit-cost
-  [{:keys [amount date +tax?] :as cmd}]
-  [{:type   :cost
-    :amount amount
-    :+tax?  +tax?
-    :date   date}])
-
-(defmethod command->events :declare-in
-  [{:keys [date] :as cmd}]
-  [{:type :in
-    :date date}])
-
-(defmethod command->events :declare-out
-  [{:keys [date] :as cmd}]
-  [{:type :out
-    :date date}])
-
-(defmethod command->events :choose-restaurant
-  [{:keys [restaurant date] :as cmd}]
-  [{:type       :choose
-    :restaurant restaurant
-    :date       date}])
-
-(defmethod command->events :submit-order
-  [{:keys [food date] :as cmd}]
-  [{:type :order
-    :food food
-    :date date}])
-
-
-(defn contextualize-event
-  "adds slack message context to event"
-  [event {user-id :user, ts :ts, :as msg}]
-  (-> event (assoc :person user-id) (assoc :ts ts)))
 
 (defn apply-sales-tax
   "applies the sales-tax-rate to the amount if the events :+tax? is truthy,
@@ -77,11 +39,76 @@
                       event)]
     (dissoc-in taxed-event [:+tax?])))
 
-(defn condition-event
-  [event msg sales-tax-rate]
-  (-> event
-      (contextualize-event msg)
-      (apply-sales-tax sales-tax-rate)))
+
+(defn dispatch-command->events [cmd aggs] (:command-type cmd))
+
+(defmulti command->events
+          "converts the given command into events that should be committed to
+          the event stream, if any."
+          #'dispatch-command->events)
+
+
+(defmethod command->events :default [_ _] nil)
+
+(defmethod command->events :submit-payment
+  [{:keys [amount to date] :as cmd} _]
+  [(merge (base-command-event cmd)
+          {:type   :paid
+           :amount amount
+           :to     to
+           :date   date})])
+
+(defmethod command->events :submit-bought
+  [{:keys [amount date] :as cmd} _]
+  [(merge (base-command-event cmd)
+          {:type   :bought
+           :amount amount
+           :date   date})])
+
+(defmethod command->events :submit-cost
+  [{:keys [amount date +tax?] :as cmd} _]
+  [(-> (base-command-event cmd)
+       (merge {:type   :cost
+               :amount amount
+               :+tax?  +tax?
+               :date   date})
+       (apply-sales-tax sales-tax-rate))])
+
+(defmethod command->events :declare-in
+  [{:keys [date] :as cmd} _]
+  [(merge (base-command-event cmd)
+          {:type :in
+           :date date})])
+
+(defmethod command->events :declare-out
+  [{:keys [date requestor] :as cmd} {:keys [meals] :as aggs}]
+  (let [meal (get meals date)
+        cost-amount (get-in meal [:people requestor :cost])
+        uncost-cmd (when cost-amount
+                     (merge (base-command-event cmd)
+                            {:type   :uncost
+                             :amount cost-amount
+                             :date   date}))
+        out-cmd (merge (base-command-event cmd)
+                       {:type :out
+                        :date date})]
+    (if uncost-cmd
+      [uncost-cmd out-cmd]
+      [out-cmd])))
+
+(defmethod command->events :choose-restaurant
+  [{:keys [restaurant date] :as cmd} _]
+  [(merge (base-command-event cmd)
+          {:type       :choose
+           :restaurant restaurant
+           :date       date})])
+
+(defmethod command->events :submit-order
+  [{:keys [food date] :as cmd} _]
+  [(merge (base-command-event cmd)
+          {:type :order
+           :food food
+           :date date})])
 
 
 (defn events->reply
@@ -93,49 +120,49 @@
          (apply str))))
 
 
-(defn dispatch-command->reply [cmd msg events] ((juxt :command-type :info-type) cmd))
+(defn dispatch-command->reply [cmd events] ((juxt :command-type :info-type) cmd))
 
 (defmulti command->reply
           "formulates the text reply to be returns for the command, if any."
           #'dispatch-command->reply)
 
 
-(defmethod command->reply :default [_ _ _] nil)
+(defmethod command->reply :default [_ _] nil)
 
 (defmethod command->reply [:unrecognized nil]
-  [_ _ _]
+  [_ _]
   "huh?")
 
 (defmethod command->reply [:help nil]
-  [_ _ _]
+  [_ _]
   (slurp "help.md"))
 
 (defmethod command->reply [:show :balances]
-  [_ _ _]
+  [_ _]
   (->> (agg/balances)
        (money/sort-balances)
        (reverse)
        (talk/balances->str)))
 
 (defmethod command->reply [:show :pay?]
-  [_ {requestor :user} _]
+  [{:keys [requestor] :as cmd} _]
   (if-let [payment (money/best-payment requestor (agg/balances))]
     (talk/event->str payment)
     (str "Keep your money.")))
 
 (defmethod command->reply [:show :payoffs]
-  [_ _ _]
+  [_ _]
   (->> (agg/balances)
        (money/minimal-payoffs)
        (talk/payoffs->str)))
 
 (defmethod command->reply [:show :history]
-  [_ _ _]
+  [_ _]
   (->> (agg/money-events)
        (talk/recent-money-history)))
 
 (defmethod command->reply [:show :meal-summary]
-  [{:keys [date] :as cmd} _ _]
+  [{:keys [date] :as cmd} _]
   (let [meals (agg/meals)
         meal (get meals date)]
     (if (or (time/before? date (time/today)) (meal/any-bought? meal))
@@ -143,7 +170,7 @@
       (talk/pre-order-summary meal))))
 
 (defmethod command->reply [:show :ordered?]
-  [_ {requestor :user} _]
+  [{:keys [requestor] :as cmd} _]
   (let [meals (agg/meals)
         todays-meal (get meals (time/today))]
     (if-let [todays-restaurant (-> todays-meal :chosen-restaurant)]
@@ -152,17 +179,17 @@
       (str "Somebody needs to choose a restaurant first."))))
 
 (defmethod command->reply [:show :discrepancies]
-  [_ _ _]
+  [_ _]
   (let [meals (agg/meals)
         discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
     (talk/discrepant-meals-summary discrepant-meals)))
 
 
-(defmethod command->reply [:submit-payment nil] [cmd msg events] (events->reply events))
-(defmethod command->reply [:submit-bought nil] [cmd msg events] (events->reply events))
-(defmethod command->reply [:submit-cost nil] [cmd msg events] (events->reply events))
-(defmethod command->reply [:declare-in nil] [cmd msg events] (events->reply events))
-(defmethod command->reply [:declare-out nil] [cmd msg events] (events->reply events))
-(defmethod command->reply [:choose-restaurant nil] [cmd msg events] (events->reply events))
-(defmethod command->reply [:submit-order nil] [cmd msg events] (events->reply events))
+(defmethod command->reply [:submit-payment nil] [_ events] (events->reply events))
+(defmethod command->reply [:submit-bought nil] [_ events] (events->reply events))
+(defmethod command->reply [:submit-cost nil] [_ events] (events->reply events))
+(defmethod command->reply [:declare-in nil] [_ events] (events->reply events))
+(defmethod command->reply [:declare-out nil] [_ events] (events->reply events))
+(defmethod command->reply [:choose-restaurant nil] [_ events] (events->reply events))
+(defmethod command->reply [:submit-order nil] [_ events] (events->reply events))
 

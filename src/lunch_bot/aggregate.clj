@@ -16,5 +16,11 @@
 
 
 (defn money-events []
-  (->> @event/committed-events
-       (filter money/money-event?)))
+  (filter money/money-event? @event/committed-events))
+
+
+(defn get-aggregates []
+  {:committed-events event/committed-events
+   :balances         (balances)
+   :meals            (meals)
+   :money-events     (money-events)})
