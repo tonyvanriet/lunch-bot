@@ -21,6 +21,11 @@
                        "biff" {:status :out}}})
 
 
+(defn update-vals [m f]
+  "applies the function f to all of the vals of the map m."
+  (into {} (for [[k v] m] [k (f v)])))
+
+
 (defn dispatch-apply-event-to-meals [meals event] (:type event))
 
 (defmulti apply-event-to-meals #'dispatch-apply-event-to-meals)
@@ -38,7 +43,11 @@
 
 (defmethod apply-event-to-meals :choose
   [meals {:keys [date restaurant] :as event}]
-  (assoc-in meals [date :chosen-restaurant] restaurant))
+  (let [person-meals (-> meals (get date) :people)
+        person-meals-orders-removed (update-vals person-meals #(dissoc % :order))]
+    (-> meals
+        (assoc-in [date :people] person-meals-orders-removed)
+        (assoc-in [date :chosen-restaurant] restaurant))))
 
 (defmethod apply-event-to-meals :order
   [meals {:keys [date person food] :as event}]
