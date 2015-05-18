@@ -109,15 +109,15 @@
   (let [meal (get meals date)]
     (if (= restaurant (:chosen-restaurant meal))
       []
-      (let [costed-person-meals (filter #(contains? (val %) :cost) (:people meal))
-            uncost-events (mapv #(make-event cmd :uncost {:amount (:cost (val %))
-                                                          :date   date
-                                                          :person (key %)})
-                                costed-person-meals)
-            choose-event (make-event cmd :choose {:restaurant restaurant
-                                                  :date       date})]
+      (let [choose-event (make-event cmd :choose {:restaurant restaurant
+                                                  :date       date})
+            costed-person-meals (filter #(contains? (val %) :cost) (:people meal))
+            uncost-events (when (:chosen-restaurant meal)
+                            (mapv #(make-event cmd :uncost {:amount (:cost (val %))
+                                                            :date   date
+                                                            :person (key %)})
+                                  costed-person-meals))]
         (conj uncost-events choose-event)))))
-
 
 (defmethod command->events :submit-order
   [{:keys [food date] :as cmd} _]

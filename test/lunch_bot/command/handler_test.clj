@@ -98,22 +98,27 @@
         (is (= events [expected-unbought-event expected-second-bought-event]))))))
 
 
-(deftest choose-retracts-previous-costs
+(deftest restaurant-change-retracts-previous-costs
   (let [today (time/today)
         restaurant {:name "BW3"}
         person-costed "U1234"
         person-choosing "U4321"
         cost-amount 2.34M
-        aggs {:meals {today {:people            {person-costed {:status :in
-                                                                :cost   cost-amount}}
-                             :chosen-restaurant restaurant}}}]
-    (testing "same restaurant chosen again, no choose event, no retractions"
-      (let [choose-same-restaurant-cmd {:command-type :choose-restaurant
-                                        :restaurant   restaurant
-                                        :date         today
-                                        :requestor    person-choosing}
-            actual-events (command->events choose-same-restaurant-cmd aggs)]
-        (is (= [] actual-events))))
+        aggs-no-choice {:meals {today {:people {person-costed {:status :in
+                                                               :cost   cost-amount}}}}}
+        aggs-chosen (assoc-in aggs-no-choice [:meals today :chosen-restaurant] restaurant)
+        choose-restaurant-cmd {:command-type :choose-restaurant
+                               :restaurant   restaurant
+                               :date         today
+                               :requestor    person-choosing}]
+    (testing "first restaurant choice does not retract costs"
+      (let [choose-event {:type       :choose
+                          :restaurant restaurant
+                          :date       today
+                          :person     person-choosing}]
+        (is (= [choose-event] (command->events choose-restaurant-cmd aggs-no-choice)))))
+    (testing "same restaurant chosen again yields no choose event and no retractions"
+      (is (= [] (command->events choose-restaurant-cmd aggs-chosen))))
     (testing "different restaurant chosen, costs retracted"
       (let [different-restaurant {:name "Portillo's"}
             choose-different-restaurant-cmd {:command-type :choose-restaurant
@@ -129,5 +134,5 @@
                                    :date       today
                                    :person     person-choosing}]
         (is (= [expected-uncost-event expected-choose-event]
-               (command->events choose-different-restaurant-cmd aggs)))))))
+               (command->events choose-different-restaurant-cmd aggs-chosen)))))))
 
