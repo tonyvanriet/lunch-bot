@@ -24,7 +24,7 @@
 
 
 (defn make-event
-  [{:keys [requestor date ts] :as cmd} event-type with-map]
+  [{:keys [requestor ts] :as cmd} event-type with-map]
   (-> {:type event-type}
       (assoc-if-some-val :person requestor)
       (assoc-if-some-val :ts ts)
@@ -105,9 +105,19 @@
       [out-event])))
 
 (defmethod command->events :choose-restaurant
-  [{:keys [restaurant date] :as cmd} _]
-  [(make-event cmd :choose {:restaurant restaurant
-                            :date       date})])
+  [{:keys [restaurant date] :as cmd} {:keys [meals] :as aggs}]
+  (let [meal (get meals date)]
+    (if (= restaurant (:chosen-restaurant meal))
+      []
+      (let [costed-person-meals (filter #(contains? (val %) :cost) (:people meal))
+            uncost-events (mapv #(make-event cmd :uncost {:amount (:cost (val %))
+                                                          :date   date
+                                                          :person (key %)})
+                                costed-person-meals)
+            choose-event (make-event cmd :choose {:restaurant restaurant
+                                                  :date       date})]
+        (conj uncost-events choose-event)))))
+
 
 (defmethod command->events :submit-order
   [{:keys [food date] :as cmd} _]
@@ -127,7 +137,7 @@
 (defn dispatch-command->reply [cmd events] ((juxt :command-type :info-type) cmd))
 
 (defmulti command->reply
-          "formulates the text reply to be returns for the command, if any."
+          "formulates the text reply to be returned for the command, if any."
           #'dispatch-command->reply)
 
 

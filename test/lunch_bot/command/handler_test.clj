@@ -97,3 +97,37 @@
             events (command->events second-bought-cmd aggs-bought)]
         (is (= events [expected-unbought-event expected-second-bought-event]))))))
 
+
+(deftest choose-retracts-previous-costs
+  (let [today (time/today)
+        restaurant {:name "BW3"}
+        person-costed "U1234"
+        person-choosing "U4321"
+        cost-amount 2.34M
+        aggs {:meals {today {:people            {person-costed {:status :in
+                                                                :cost   cost-amount}}
+                             :chosen-restaurant restaurant}}}]
+    (testing "same restaurant chosen again, no choose event, no retractions"
+      (let [choose-same-restaurant-cmd {:command-type :choose-restaurant
+                                        :restaurant   restaurant
+                                        :date         today
+                                        :requestor    person-choosing}
+            actual-events (command->events choose-same-restaurant-cmd aggs)]
+        (is (= [] actual-events))))
+    (testing "different restaurant chosen, costs retracted"
+      (let [different-restaurant {:name "Portillo's"}
+            choose-different-restaurant-cmd {:command-type :choose-restaurant
+                                             :restaurant   different-restaurant
+                                             :date         today
+                                             :requestor    person-choosing}
+            expected-uncost-event {:type   :uncost
+                                   :amount cost-amount
+                                   :person person-costed
+                                   :date   today}
+            expected-choose-event {:type       :choose
+                                   :restaurant different-restaurant
+                                   :date       today
+                                   :person     person-choosing}]
+        (is (= [expected-uncost-event expected-choose-event]
+               (command->events choose-different-restaurant-cmd aggs)))))))
+
