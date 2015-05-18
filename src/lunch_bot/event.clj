@@ -9,7 +9,7 @@
 
 
 (defn initialize-events []
-  (swap! committed-events (constantly (into [] (store/read-events events-filename)))))
+  (reset! committed-events (vec (store/read-events events-filename))))
 
 
 (defn commit-event

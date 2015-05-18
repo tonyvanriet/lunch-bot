@@ -104,10 +104,10 @@
 
 (def ^:private restaurants (atom []))
 ; todo restaurant state passed in from core
-(swap! restaurants
-       (fn [_] (map #(hash-map :name %) ["BW3" "Chipotle" "Portillo's" "Elephant" "Smoque"
-                                         "Superdawg" "Naf Naf" "Makisu" "Jimmy John's" "Potbelly"
-                                         "Five Guys" "Corner Bakery" "Papa John's" "King Pho"])))
+(reset! restaurants
+        (map #(hash-map :name %) ["BW3" "Chipotle" "Portillo's" "Elephant" "Smoque"
+                                  "Superdawg" "Naf Naf" "Makisu" "Jimmy John's" "Potbelly"
+                                  "Five Guys" "Corner Bakery" "Papa John's" "King Pho"]))
 
 (defn normalize-restaurant-word
   [word] (-> word
