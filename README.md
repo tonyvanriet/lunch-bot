@@ -18,7 +18,7 @@ lunchbot uses [`clj-slack-client`](https://github.com/tonyvanriet/clj-slack-clie
 
 lunchbot is very much under development, though the basic functionality described above is working well. I'd love to have more people testing it out. If you're interested, drop me a note and I'd be happy to answer questions.
 
-To use it, you'll have to [create a bot user](https://my.slack.com/services/new/bot) in Slack and put its API token in an `api-token.txt` file at the top-level of the project.
+To run the bot, you'll have to [create a bot user](https://my.slack.com/services/new/bot) in Slack and put its API token in an `api-token.txt` file at the top-level of the project. Install [Leiningen](http://leiningen.org/) to assist with running the Clojure application. Then run the bot by executing `lein run` from within the project directory.
 
 All of the commands issued to lunchbot are written out to the `events.edn` file, and lunchbot will be initialized from that file during startup. I intend to make that more robust in the future, but in the meantime, you might want to backup that file somehow.
 
