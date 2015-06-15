@@ -4,8 +4,12 @@
     [clj-time.format :refer [formatter parse]]
     [clj-time.coerce :refer [to-local-date]]
     [clj-slack-client.team-state :as team]
-    [clojure.string :as str]))
+    [clojure.string :as str]
+    [lunch-bot.store :as store]
+    [lunch-bot.restaurant :as restaurant]))
 
+
+(def restaurants-filename "restaurants.edn")
 
 (defn text->words
   [text]
@@ -102,13 +106,6 @@
   word)
 
 
-(def ^:private restaurants (atom []))
-; todo restaurant state passed in from core
-(reset! restaurants
-        (map #(hash-map :name %) ["BW3" "Chipotle" "Portillo's" "Elephant" "Smoque"
-                                  "Superdawg" "Naf Naf" "Makisu" "Jimmy John's" "Potbelly"
-                                  "Five Guys" "Corner Bakery" "Papa John's" "King Pho"]))
-
 (defn normalize-restaurant-word
   [word] (-> word
              (str/lower-case)
@@ -122,5 +119,5 @@
                          (text->words)
                          (map normalize-restaurant-word)
                          (some #(.startsWith % norm-word))))
-            @restaurants)))
+            (restaurant/get-restaurants))))
 

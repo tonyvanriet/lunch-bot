@@ -33,6 +33,12 @@
        (map #(update-in % [:date] inst->local-date))
        (into [])))
 
+(defn- edn->restaurants
+  [edn]
+  (->> edn
+       (edn/read-string)
+       (into [])))
+
 
 (defn- events->edn
   [events]
@@ -52,5 +58,11 @@
   [events filename]
   (spit filename (events->edn events)))
 
+
+(defn read-restaurants
+  [filename]
+  (->> filename
+       (slurp-filename)
+       (edn->restaurants)))
 
 

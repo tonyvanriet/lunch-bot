@@ -6,7 +6,8 @@
      [talk :as talk]
      [store :as store]
      [event :as event]
-     [aggregate :as aggregate]]
+     [aggregate :as aggregate]
+     [restaurant :as restaurant]]
     [lunch-bot.command.handler :as handler]
     [clj-slack-client
      [core :as slack]
@@ -117,6 +118,7 @@
   ([api-token]
    (try
      (event/initialize-events)
+     (restaurant/initialize-restaurants)
      (alter-var-root (var *api-token*) (constantly api-token))
      (slack/connect *api-token* handle-slack-event)
      (prn "lunch-bot running...")
