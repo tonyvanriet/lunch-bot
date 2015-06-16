@@ -9,7 +9,7 @@
   (:import (java.math RoundingMode)))
 
 
-(def sales-tax-rate 0.0925M)
+(def default-sales-tax-rate 0.0925M)
 
 
 (defn assoc-if
@@ -31,6 +31,13 @@
       (merge with-map)))
 
 
+(defn calculate-sales-tax
+  [amount rate]
+  (-> amount
+      (* rate)
+      (.setScale 2 RoundingMode/HALF_UP)))
+
+
 (defn apply-sales-tax
   "applies the sales-tax-rate to the amount if the events :+tax? is truthy,
    and then removes :+tax?"
@@ -38,8 +45,7 @@
   (let [taxed-event (if (:+tax? event)
                       (-> event
                           (assoc :pretax-amount (:amount event))
-                          (update-in [:amount] #(-> (* % (+ 1 sales-tax-rate))
-                                                    (.setScale 2 RoundingMode/HALF_UP))))
+                          (update-in [:amount] #(+ % (calculate-sales-tax % sales-tax-rate))))
                       event)]
     (dissoc-in taxed-event [:+tax?])))
 
@@ -76,6 +82,10 @@
 (defmethod command->events :submit-cost
   [{:keys [amount +tax? date requestor] :as cmd} {:keys [meals] :as aggs}]
   (let [meal (get meals date)
+        restaurant (:chosen-restaurant meal)
+        sales-tax-rate (if (:sales-tax-rate restaurant)
+                         (:sales-tax-rate restaurant)
+                         default-sales-tax-rate)
         previous-cost-amount (get-in meal [:people requestor :cost])
         uncost-event (when previous-cost-amount
                        (make-event cmd :uncost {:amount previous-cost-amount

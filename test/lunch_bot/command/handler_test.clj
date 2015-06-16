@@ -136,3 +136,32 @@
         (is (= [expected-uncost-event expected-choose-event]
                (command->events choose-different-restaurant-cmd aggs-chosen)))))))
 
+
+(deftest restaurant-with-custom-sales-tax-overrides-default
+  (let [today (time/today)
+        cost-amount 5.67M
+        default-rate default-sales-tax-rate
+        custom-rate (+ default-sales-tax-rate 0.01M)
+        cost-plus-tax-cmd {:command-type :submit-cost
+                           :amount       cost-amount
+                           :+tax?        :+tax
+                           :date         today}]
+    (testing "cost for restaurant without custom sales tax yields cost event with default sales tax"
+      (let [aggs-restaurant-without-tax {:meals {today {:chosen-restaurant {:name "BW3"}}}}
+            expected-cost-event-default {:type          :cost
+                                         :pretax-amount cost-amount
+                                         :amount        (+ cost-amount
+                                                           (calculate-sales-tax cost-amount default-rate))
+                                         :date          today}]
+        (is (= [expected-cost-event-default]
+               (command->events cost-plus-tax-cmd aggs-restaurant-without-tax)))))
+    (testing "cost for restaurant with custom sales tax yields cost event with custom sales tax"
+      (let [aggs-restaurant-with-tax {:meals {today {:chosen-restaurant {:name           "BW3"
+                                                                         :sales-tax-rate custom-rate}}}}
+            expected-cost-event-custom {:type          :cost
+                                        :pretax-amount cost-amount
+                                        :amount        (+ cost-amount
+                                                          (calculate-sales-tax cost-amount custom-rate))
+                                        :date          today}]
+        (is (= [expected-cost-event-custom]
+               (command->events cost-plus-tax-cmd aggs-restaurant-with-tax)))))))
