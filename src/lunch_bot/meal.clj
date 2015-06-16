@@ -71,7 +71,10 @@
 
 (defmethod apply-event-to-meals :uncost
   [meals {:keys [date person amount] :as event}]
-  (update-in meals [date :people person :cost] (fnil - 0) amount))
+  (let [uncosted-meals (update-in meals [date :people person :cost] (fnil - 0) amount)]
+    (if (= 0M (get-in uncosted-meals [date :people person :cost]))
+      (dissoc-in uncosted-meals [date :people person :cost])
+      uncosted-meals)))
 
 (defmethod apply-event-to-meals :default
   [meal _]
