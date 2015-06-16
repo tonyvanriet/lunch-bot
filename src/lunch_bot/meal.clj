@@ -116,6 +116,7 @@
   (let [ins (people-in meal)]
     {:chosen-restaurant-name (-> meal :chosen-restaurant :name)
      :ins                    ins
+     :outs                   (people-out meal)
      :orderless-ins          (filter #(not (person-ordered? meal %)) ins)
      :costless-ins           (filter #(not (person-costed? meal %)) ins)
      :buyers                 (people-bought meal)
