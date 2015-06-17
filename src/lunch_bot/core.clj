@@ -37,9 +37,11 @@
 (defmethod handle-event :choose
   [event]
   (let [restaurant (:restaurant event)
+        menu-url (:menu-url restaurant)
         channel-id (get-lunch-channel-id)]
     (web/channels-setTopic *api-token* channel-id
-                           (str "ordering " (:name restaurant)))))
+                           (str "ordering " (:name restaurant)
+                                (when menu-url (str " " menu-url))))))
 
 
 (defn handle-command

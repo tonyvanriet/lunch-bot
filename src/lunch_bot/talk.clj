@@ -104,7 +104,8 @@
   [event]
   (case (:type event)
     (:paid :bought :cost :uncost :should-pay) (event->str event)
-    :choose nil
+    :choose (let [{:keys [name menu-url]} (:restaurant event)]
+              (str name " it is!" (when menu-url (str "\nHere's the menu: " menu-url))))
     :in (str (rand-nth [":metal:" ":rocket:" ":clap:" ":thumbsup:" ":dancers:" ":facepunch:"]))
     :out (str (rand-nth [":fu:" ":fire:" ":thumbsdown:" ":hankey:"]))
     :order (str "mmm")))
