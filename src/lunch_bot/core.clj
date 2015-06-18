@@ -53,10 +53,8 @@
     (doseq [event events]
       (event/commit-event event)
       (handle-event event))
-    (let [updated-aggs (aggregate/get-aggregates)
-          reply-text (handler/command->reply cmd aggs events)
-          reply-channel-id (:channel-id cmd)]
-      [{:text reply-text, :channel-id reply-channel-id}])))
+    (let [updated-aggs (aggregate/get-aggregates)]
+      (handler/command->replies cmd updated-aggs events))))
 
 
 (defn contextualize-command
