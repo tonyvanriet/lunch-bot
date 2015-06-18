@@ -46,15 +46,17 @@
 
 (defn handle-command
   "translates the command into events, commits the events to the stream,
-  handles the events, and returns a reply."
+  handles the events, and returns replies."
   [cmd]
   (let [aggs (aggregate/get-aggregates)
         events (handler/command->events cmd aggs)]
     (doseq [event events]
       (event/commit-event event)
       (handle-event event))
-    (let [updated-aggs (aggregate/get-aggregates)]
-      (handler/command->reply cmd aggs events))))
+    (let [updated-aggs (aggregate/get-aggregates)
+          reply-text (handler/command->reply cmd aggs events)
+          reply-channel-id (:channel-id cmd)]
+      [{:text reply-text, :channel-id reply-channel-id}])))
 
 
 (defn contextualize-command
@@ -74,9 +76,9 @@
   (when-let [cmd-text (command/message->command-text channel-id text)]
     (let [raw-cmd (command/command-text->command cmd-text)
           cmd (contextualize-command raw-cmd msg cmd-text)
-          reply (handle-command cmd)]
-      (when reply
-        (talk/say-message channel-id reply)))))
+          replies (handle-command cmd)]
+      (doseq [{reply-channel-id :channel-id, reply-text :text} replies]
+        (talk/say-message reply-channel-id reply-text)))))
 
 
 (defn dispatch-handle-slack-event [event] ((juxt :type :subtype) event))
