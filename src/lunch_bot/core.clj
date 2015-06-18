@@ -59,10 +59,13 @@
 
 (defn contextualize-command
   "apply slack message context to the raw command"
-  [cmd msg]
+  [cmd {requestor :user, text :text, ts :ts, channel-id :channel, :as msg} cmd-text]
   (-> cmd
-      (assoc :requestor (:user msg))
-      (assoc :ts (:ts msg))))
+      (assoc :requestor requestor)
+      (assoc :text text)
+      (assoc :cmd-text cmd-text)
+      (assoc :channel-id channel-id)
+      (assoc :ts ts)))
 
 
 (defn handle-message
@@ -70,7 +73,7 @@
   [{channel-id :channel, text :text, :as msg}]
   (when-let [cmd-text (command/message->command-text channel-id text)]
     (let [raw-cmd (command/command-text->command cmd-text)
-          cmd (contextualize-command raw-cmd msg)
+          cmd (contextualize-command raw-cmd msg cmd-text)
           reply (handle-command cmd)]
       (when reply
         (talk/say-message channel-id reply)))))
