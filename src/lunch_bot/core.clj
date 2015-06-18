@@ -49,12 +49,12 @@
   handles the events, and returns a reply."
   [cmd]
   (let [aggs (aggregate/get-aggregates)
-        events (handler/command->events cmd aggs)
-        reply (handler/command->reply cmd events)]
+        events (handler/command->events cmd aggs)]
     (doseq [event events]
       (event/commit-event event)
       (handle-event event))
-    reply))
+    (let [updated-aggs (aggregate/get-aggregates)]
+      (handler/command->reply cmd aggs events))))
 
 
 (defn contextualize-command
