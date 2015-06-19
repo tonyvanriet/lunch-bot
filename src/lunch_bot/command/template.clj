@@ -124,3 +124,14 @@
   {:command-type :submit-order
    :food         food
    :date         (time/today)})
+
+(defmethod command-template->command [:nag :date]
+  [[[_ _] [_ date]]]
+  {:command-type :send-nags
+   :date date})
+
+(defmethod command-template->command [:nag]
+  [[action-elem]]
+  {:command-type :send-nags
+   :date (time/today)})
+
