@@ -33,6 +33,13 @@
            ", and " (last people-strs)))))
 
 
+(defn relative-date-str
+  [date]
+  (cond (= date (time/today)) nil
+        (= date (time/minus (time/today) (time/days 1))) " yesterday"
+        :else (str " on " date)))
+
+
 (defn balances->str [balances]
   (str (str-coll (map #(str (person->str (key %)) " " (val %)) balances)) "\n"
        (let [bal-sum (apply + (vals balances))]
@@ -55,20 +62,16 @@
 (defmulti event->str #'dispatch-event->str)
 
 (defmethod event->str :bought [{:keys [person amount date]}]
-  (str (person->str person) " bought lunch for " amount
-       (when (not= date (time/today)) (str " on " date))))
+  (str (person->str person) " bought lunch for " amount (relative-date-str date)))
 
 (defmethod event->str :cost [{:keys [person amount date]}]
-  (str (person->str person) "'s lunch cost " amount
-       (when (not= date (time/today)) (str " on " date))))
+  (str (person->str person) "'s lunch cost " amount (relative-date-str date)))
 
 (defmethod event->str :uncost [{:keys [person amount date]}]
-  (str "retracted " (person->str person) "'s lunch cost " amount
-       (when (not= date (time/today)) (str " on " date))))
+  (str "retracted " (person->str person) "'s lunch cost " amount (relative-date-str date)))
 
 (defmethod event->str :paid [{:keys [person amount to date]}]
-  (str (person->str person) " paid " (person->str to) " " amount
-       (when (not= date (time/today)) (str " on " date))))
+  (str (person->str person) " paid " (person->str to) " " amount (relative-date-str date)))
 
 (defmethod event->str :should-pay [{:keys [person amount to]}]
   (str (person->str person) " should pay " (person->str to) " " amount))
@@ -144,7 +147,7 @@
         buyers-str (people->str buyers)
         multiple-buyers? (> (count buyers) 1)]
     (str (if chosen-restaurant-name
-           (str "Ordered from " chosen-restaurant-name (when (not= date (time/today)) (str " on " date)))
+           (str "Ordered from " chosen-restaurant-name (relative-date-str date))
            (str "No restaurant chosen")) "\n"
          (when (seq buyers)
            (str buyers-str " *bought*" "\n"))
