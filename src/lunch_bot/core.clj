@@ -76,8 +76,13 @@
     (let [raw-cmd (command/command-text->command cmd-text)
           cmd (contextualize-command raw-cmd msg cmd-text)
           replies (handle-command cmd)]
-      (doseq [{reply-channel-id :channel-id, reply-text :text} replies]
-        (talk/say-message reply-channel-id reply-text)))))
+      (doseq [reply replies]
+        (let [{distribution :distribution, reply-text :text} reply
+              reply-channel-id (case distribution
+                                 :channel (:channel-id reply)
+                                 :broadcast (get-lunch-channel-id)
+                                 :user (state/user-id->dm-id (:user-id reply)))]
+          (talk/say-message reply-channel-id reply-text))))))
 
 
 (defn dispatch-handle-slack-event [event] ((juxt :type :subtype) event))

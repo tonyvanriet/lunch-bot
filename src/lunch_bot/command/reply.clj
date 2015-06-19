@@ -6,11 +6,28 @@
     [clj-time.core :as time]))
 
 
+
+(defn make-channel-reply
+  "build a reply to be distributed to a particular channel"
+  [channel-id reply-text]
+  {:distribution :channel, :channel-id channel-id, :text reply-text})
+
+(defn make-broadcast-reply
+  "build a reply to be distributed to the designated lunch broadcast channel"
+  [reply-text]
+  {:distribution :broadcast, :text reply-text})
+
+(defn make-user-reply
+  "build a reply to be distributed to an individual user"
+  [user-id reply-text]
+  {:distribution :user, :user-id user-id, :text reply-text})
+
+
 (defn standard-replies
   "builds a list of replies in a way that is common to most of the command types.
   a single reply is returned, directed at the channel the command came in on."
   [cmd reply-text]
-  [{:channel-id (:channel-id cmd), :text reply-text}])
+  [(make-channel-reply (:channel-id cmd) reply-text)])
 
 
 (defn events->reply
