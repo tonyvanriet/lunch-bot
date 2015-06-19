@@ -70,7 +70,7 @@
   [{:keys [date] :as cmd} {:keys [meals] :as aggs} _]
   (let [meal (get meals date)]
     (standard-replies cmd (if (or (time/before? date (time/today)) (meal/any-bought? meal))
-                            (talk/post-order-summary meal)
+                            (talk/post-order-summary date meal)
                             (talk/pre-order-summary meal)))))
 
 (defmethod command->replies [:show :ordered?]

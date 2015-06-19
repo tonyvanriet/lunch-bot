@@ -138,13 +138,13 @@
          (meal->orders-str meal))))
 
 (defn post-order-summary
-  [meal]
+  [date meal]
   (let [{:keys [chosen-restaurant-name ins costless-ins buyers buyer-surplus]} (meal/summary meal)
         multiple-ins? (> (count ins) 1)
         buyers-str (people->str buyers)
         multiple-buyers? (> (count buyers) 1)]
     (str (if chosen-restaurant-name
-           (str "Ordered from " chosen-restaurant-name)
+           (str "Ordered from " chosen-restaurant-name (when (not= date (time/today)) (str " on " date)))
            (str "No restaurant chosen")) "\n"
          (when (seq buyers)
            (str buyers-str " *bought*" "\n"))
