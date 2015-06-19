@@ -111,3 +111,18 @@
 (defmethod command->replies [:declare-out nil] [cmd _ events] (standard-replies cmd (events->reply events)))
 (defmethod command->replies [:choose-restaurant nil] [cmd _ events] (standard-replies cmd (events->reply events)))
 (defmethod command->replies [:submit-order nil] [cmd _ events] (standard-replies cmd (events->reply events)))
+
+(defn bought-nag-str
+  [date]
+  (str "If you bought lunch" (when (not= date (time/today)) (str " on " date)) ", let me know."))
+
+(defmethod command->replies [:send-nags nil]
+  [{:keys [date] :as cmd} {:keys [meals] :as aggs} _]
+  (let [meal (get meals date)
+        meal-summary (meal/summary meal)
+        costless-ins (:costless-ins meal-summary)
+        cost-replies (vec (map #(make-user-reply % (talk/post-order-summary date meal)) costless-ins))]
+    (if (meal/any-bought? meal)
+      cost-replies
+      (conj cost-replies (make-broadcast-reply (bought-nag-str date))))))
+
