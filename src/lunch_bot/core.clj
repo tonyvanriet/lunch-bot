@@ -9,6 +9,7 @@
      [aggregate :as aggregate]
      [restaurant :as restaurant]]
     [lunch-bot.command.handler :as handler]
+    [lunch-bot.command.reply :as reply]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
@@ -54,7 +55,7 @@
       (event/commit-event event)
       (handle-event event))
     (let [updated-aggs (aggregate/get-aggregates)]
-      (handler/command->replies cmd updated-aggs events))))
+      (reply/command->replies cmd updated-aggs events))))
 
 
 (defn contextualize-command
