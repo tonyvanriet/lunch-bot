@@ -36,10 +36,3 @@ Info
 >show the *balances*
 
 >show the *history*
-
-Eventually
-> show *monday*
-
-> show *last thursday*
-
-> order the *usual*

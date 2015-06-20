@@ -6,6 +6,8 @@ lunchbot is a Slack bot that manages group lunch activity.
 
 lunchbot keeps track of who buys lunch each day along with the cost of everybody's lunch, and maintains a running balance for each team member. When somebody pays off their debt, tell lunchbot and the balances will be adjusted accordingly.
 
+![](doc/balances.png "Localization by ambiguity")
+
 lunchbot doesn't bother tracking who owes what to whom. Instead, it's treated as a single pool of money amongst the team. The people that buy lunch will show a positive balance reflecting the amount of money they're owed. The people that just order lunch without buying will show a negative balance reflecting the amount that they owe. As different people buy lunch, the balance shifts between them and, in the end, this provides a very simple way to minimize the number of times you actually have to exchange money.
 
 lunchbot can also gather up orders from each person and provide a summary for whoever is placing the order.
@@ -22,7 +24,7 @@ To run the bot, you'll have to [create a bot user](https://my.slack.com/services
 
 All of the commands issued to lunchbot are written out to the `events.edn` file, and lunchbot will be initialized from that file during startup. I intend to make that more robust in the future, but in the meantime, you might want to backup that file somehow.
 
-I plan to add commands for adding and modifying restaurants but currently they are hard-coded in `command/parse.clj`.
+I plan to add commands for adding and modifying restaurants but currently you have to create a `restaurants.edn` file and [configure your restaurants](doc/restaurants.md) there.
 
 ## License
 
