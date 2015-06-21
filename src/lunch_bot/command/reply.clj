@@ -54,7 +54,7 @@
 
 (defmethod command->replies [:help nil]
   [cmd _ _]
-  (standard-replies cmd (slurp "help.md")))
+  [(make-user-reply (:requestor cmd) (slurp "help.md"))])
 
 (defmethod command->replies [:show :balances]
   [cmd {:keys [balances] :as aggs} _]
