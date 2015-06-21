@@ -69,6 +69,15 @@
       (assoc :ts ts)))
 
 
+(defn get-user-dm-id
+  "get the direct message channel id for this user.
+  open the dm channel if it hasn't been opened yet."
+  [user-id]
+  (if-let [dm-id (state/user-id->dm-id user-id)]
+    dm-id
+    (web/im-open *api-token* user-id)))
+
+
 (defn handle-message
   "translates a slack message into a command, handles that command, and communicates the reply"
   [{channel-id :channel, text :text, :as msg}]
@@ -76,12 +85,11 @@
     (let [raw-cmd (command/command-text->command cmd-text)
           cmd (contextualize-command raw-cmd msg cmd-text)
           replies (handle-command cmd)]
-      (doseq [reply replies]
-        (let [{distribution :distribution, reply-text :text} reply
-              reply-channel-id (case distribution
+      (doseq [{distribution :distribution, reply-text :text, :as reply} replies]
+        (let [reply-channel-id (case distribution
                                  :channel (:channel-id reply)
                                  :broadcast (get-lunch-channel-id)
-                                 :user (state/user-id->dm-id (:user-id reply)))]
+                                 :user (get-user-dm-id (:user-id reply)))]
           (talk/say-message reply-channel-id reply-text))))))
 
 
