@@ -6,7 +6,6 @@
     [clj-time.core :as time]))
 
 
-
 (defn make-channel-reply
   "build a reply to be distributed to a particular channel"
   [channel-id reply-text]
@@ -66,9 +65,9 @@
 
 (defmethod command->replies [:show :pay?]
   [{:keys [requestor] :as cmd} {:keys [balances] :as aggs} _]
-  (standard-replies cmd (if-let [payment (money/best-payment requestor balances)]
-                          (talk/event->str payment)
-                          (str "Keep your money."))))
+  [(make-user-reply requestor (if-let [payment (money/best-payment requestor balances)]
+                                (talk/event->str payment)
+                                (str "Keep your money.")))])
 
 (defmethod command->replies [:show :payoffs]
   [cmd {:keys [balances] :as aggs} _]
@@ -97,7 +96,7 @@
                      (let [person-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
                        (talk/person-meal-history person-meals todays-restaurant))
                      (str "Somebody needs to choose a restaurant first."))]
-    (standard-replies cmd reply-text)))
+    [(make-user-reply requestor reply-text)]))
 
 (defmethod command->replies [:show :discrepancies]
   [cmd {:keys [meals] :as aggs} _]
