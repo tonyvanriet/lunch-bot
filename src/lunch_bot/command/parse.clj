@@ -43,16 +43,22 @@
                             :yesterday ["yesterday"]})
 
 
-(defn first-starts-with
+(defn word-match
+  [word comp]
+  (if (str/blank? word)
+    (= word comp)
+    (.startsWith comp word)))
+
+(defn first-word-match
   [word strs]
-  (some #(when (.startsWith % word) %) strs))
+  (some #(when (word-match word %) %) strs))
 
 (defn word->element-keyword
   "finds the first str in the str-map that starts with the given word
   and returns the associated key. assumes the word is lower-case."
   [word str-map]
   (some->> str-map
-           (filter #(first-starts-with word (val %)))
+           (filter #(first-word-match word (val %)))
            (first)
            (key)))
 
