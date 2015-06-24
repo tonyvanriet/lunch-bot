@@ -78,19 +78,33 @@
     (web/im-open *api-token* user-id)))
 
 
+(defn printex
+  [msg ex]
+  (let [line (apply str (repeat 100 "-"))]
+    (println line)
+    (println msg)
+    (println ex)
+    (clojure.stacktrace/print-stack-trace ex)
+    (println line)))
+
+
 (defn handle-message
   "translates a slack message into a command, handles that command, and communicates the reply"
   [{channel-id :channel, text :text, :as msg}]
-  (when-let [cmd-text (command/message->command-text channel-id text)]
-    (let [raw-cmd (command/command-text->command cmd-text)
-          cmd (contextualize-command raw-cmd msg cmd-text)
-          replies (handle-command cmd)]
-      (doseq [{distribution :distribution, reply-text :text, :as reply} replies]
-        (let [reply-channel-id (case distribution
-                                 :channel (:channel-id reply)
-                                 :broadcast (get-lunch-channel-id)
-                                 :user (get-user-dm-id (:user-id reply)))]
-          (talk/say-message reply-channel-id reply-text))))))
+  (try
+    (when-let [cmd-text (command/message->command-text channel-id text)]
+      (let [raw-cmd (command/command-text->command cmd-text)
+            cmd (contextualize-command raw-cmd msg cmd-text)
+            replies (handle-command cmd)]
+        (doseq [{distribution :distribution, reply-text :text, :as reply} replies]
+          (let [reply-channel-id (case distribution
+                                   :channel (:channel-id reply)
+                                   :broadcast (get-lunch-channel-id)
+                                   :user (get-user-dm-id (:user-id reply)))]
+            (talk/say-message reply-channel-id reply-text)))))
+    (catch Exception ex
+      (printex (str "Exception trying to handle slack message\n" (str msg) ".") ex)
+      (try (talk/say-message channel-id "@!#?@!")))))
 
 
 (defn dispatch-handle-slack-event [event] ((juxt :type :subtype) event))
@@ -116,6 +130,14 @@
   nil)
 
 
+(defn try-handle-slack-event
+  [event]
+  (try
+    (handle-slack-event event)
+    (catch Exception ex
+      (printex (str "Exception trying to handle slack event\n" (str event) ".") ex))))
+
+
 (defn wait-for-console-quit []
   (loop []
     (let [input (read-line)]
@@ -139,8 +161,8 @@
      (event/initialize-events)
      (restaurant/initialize-restaurants)
      (alter-var-root (var *api-token*) (constantly api-token))
-     (slack/connect *api-token* handle-slack-event)
-     (prn "lunch-bot running...")
+     (slack/connect *api-token* try-handle-slack-event)
+     (println "lunch-bot running...")
      (catch Exception ex
        (println ex)
        (println "couldn't start lunch-bot")
