@@ -22,11 +22,10 @@
   {:distribution :user, :user-id user-id, :text reply-text})
 
 
-(defn standard-replies
-  "builds a list of replies in a way that is common to most of the command types.
-  a single reply is returned, directed at the channel the command came in on."
+(defn make-command-return-reply
+  "build a reply to be distributed to the channel that the command was received on"
   [cmd reply-text]
-  [(make-channel-reply (:channel-id cmd) reply-text)])
+  (make-channel-reply (:channel-id cmd) reply-text))
 
 
 (defn events->reply
@@ -49,7 +48,7 @@
 
 (defmethod command->replies [:unrecognized nil]
   [cmd _ _]
-  (standard-replies cmd "huh?"))
+  [(make-command-return-reply cmd "huh?")])
 
 (defmethod command->replies [:help nil]
   [cmd _ _]
@@ -61,7 +60,8 @@
        (money/sort-balances)
        (reverse)
        (talk/balances->str)
-       (standard-replies cmd)))
+       (make-command-return-reply cmd)
+       (vector)))
 
 (defmethod command->replies [:show :pay?]
   [{:keys [requestor] :as cmd} {:keys [balances] :as aggs} _]
@@ -74,20 +74,22 @@
   (->> balances
        (money/minimal-payoffs)
        (talk/payoffs->str)
-       (standard-replies cmd)))
+       (make-command-return-reply cmd)
+       (vector)))
 
 (defmethod command->replies [:show :history]
   [cmd {:keys [money-events] :as aggs} _]
   (->> money-events
        (talk/recent-money-history)
-       (standard-replies cmd)))
+       (make-command-return-reply cmd)
+       (vector)))
 
 (defmethod command->replies [:show :meal-summary]
   [{:keys [date] :as cmd} {:keys [meals] :as aggs} _]
   (let [meal (get meals date)]
-    (standard-replies cmd (if (or (time/before? date (time/today)) (meal/any-bought? meal))
-                            (talk/post-order-summary date meal)
-                            (talk/pre-order-summary meal)))))
+    [(make-command-return-reply cmd (if (or (time/before? date (time/today)) (meal/any-bought? meal))
+                                      (talk/post-order-summary date meal)
+                                      (talk/pre-order-summary meal)))]))
 
 (defmethod command->replies [:show :ordered?]
   [{:keys [requestor] :as cmd} {:keys [meals] :as aggs} _]
@@ -101,15 +103,28 @@
 (defmethod command->replies [:show :discrepancies]
   [cmd {:keys [meals] :as aggs} _]
   (let [discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
-    (standard-replies cmd (talk/discrepant-meals-summary discrepant-meals))))
+    [(make-command-return-reply cmd (talk/discrepant-meals-summary discrepant-meals))]))\
 
-(defmethod command->replies [:submit-payment nil] [cmd _ events] (standard-replies cmd (events->reply events)))
-(defmethod command->replies [:submit-bought nil] [cmd _ events] (standard-replies cmd (events->reply events)))
-(defmethod command->replies [:submit-cost nil] [cmd _ events] (standard-replies cmd (events->reply events)))
-(defmethod command->replies [:declare-in nil] [cmd _ events] (standard-replies cmd (events->reply events)))
-(defmethod command->replies [:declare-out nil] [cmd _ events] (standard-replies cmd (events->reply events)))
-(defmethod command->replies [:choose-restaurant nil] [cmd _ events] (standard-replies cmd (events->reply events)))
-(defmethod command->replies [:submit-order nil] [cmd _ events] (standard-replies cmd (events->reply events)))
+(defmethod command->replies [:submit-payment nil] [cmd _ events]
+  [(make-command-return-reply cmd (events->reply events))])
+
+(defmethod command->replies [:submit-bought nil] [cmd _ events]
+  [(make-command-return-reply cmd (events->reply events))])
+
+(defmethod command->replies [:submit-cost nil] [cmd _ events]
+  [(make-command-return-reply cmd (events->reply events))])
+
+(defmethod command->replies [:declare-in nil] [cmd _ events]
+  [(make-command-return-reply cmd (events->reply events))])
+
+(defmethod command->replies [:declare-out nil] [cmd _ events]
+  [(make-command-return-reply cmd (events->reply events))])
+
+(defmethod command->replies [:choose-restaurant nil] [cmd _ events]
+  [(make-command-return-reply cmd (events->reply events))])
+
+(defmethod command->replies [:submit-order nil] [cmd _ events]
+  [(make-command-return-reply cmd (events->reply events))])
 
 (defn bought-nag-str
   [date]
