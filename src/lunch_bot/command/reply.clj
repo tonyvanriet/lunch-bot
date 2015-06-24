@@ -11,8 +11,8 @@
   [channel-id reply-text]
   {:distribution :channel, :channel-id channel-id, :text reply-text})
 
-(defn make-broadcast-reply
-  "build a reply to be distributed to the designated lunch broadcast channel"
+(defn make-lunch-reply
+  "build a reply to be distributed to the designated lunch channel"
   [reply-text]
   {:distribution :broadcast, :text reply-text})
 
@@ -103,7 +103,7 @@
 (defmethod command->replies [:show :discrepancies]
   [cmd {:keys [meals] :as aggs} _]
   (let [discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
-    [(make-command-return-reply cmd (talk/discrepant-meals-summary discrepant-meals))]))\
+    [(make-command-return-reply cmd (talk/discrepant-meals-summary discrepant-meals))]))
 
 (defmethod command->replies [:submit-payment nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
@@ -121,7 +121,7 @@
   [(make-command-return-reply cmd (events->reply events))])
 
 (defmethod command->replies [:choose-restaurant nil] [_ _ events]
-  [(make-broadcast-reply (events->reply events))])
+  [(make-lunch-reply (events->reply events))])
 
 (defmethod command->replies [:submit-order nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
@@ -138,5 +138,5 @@
         cost-replies (vec (map #(make-user-reply % (talk/post-order-summary date meal)) costless-ins))]
     (if (meal/any-bought? meal)
       cost-replies
-      (conj cost-replies (make-broadcast-reply (bought-nag-str date))))))
+      (conj cost-replies (make-lunch-reply (bought-nag-str date))))))
 
