@@ -120,8 +120,8 @@
 (defmethod command->replies [:declare-out nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
 
-(defmethod command->replies [:choose-restaurant nil] [cmd _ events]
-  [(make-command-return-reply cmd (events->reply events))])
+(defmethod command->replies [:choose-restaurant nil] [_ _ events]
+  [(make-broadcast-reply (events->reply events))])
 
 (defmethod command->replies [:submit-order nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
