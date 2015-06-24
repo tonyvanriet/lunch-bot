@@ -106,7 +106,10 @@
     [(make-command-return-reply cmd (talk/discrepant-meals-summary discrepant-meals))]))
 
 (defmethod command->replies [:submit-payment nil] [cmd _ events]
-  [(make-command-return-reply cmd (events->reply events))])
+  (let [requestor-reply (make-command-return-reply cmd (events->reply events))
+        paid-event (first (filter #(= (:type %) :paid) events))
+        recipient-reply (make-user-reply (:to paid-event) (talk/event->reply-str paid-event))]
+    [requestor-reply recipient-reply]))
 
 (defmethod command->replies [:submit-bought nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
