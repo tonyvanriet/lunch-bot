@@ -13,7 +13,8 @@
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
-     [web :as web]]))
+     [web :as web]]
+    [clj-time.core :as time]))
 
 
 (def api-token-filename "api-token.txt")
@@ -154,6 +155,24 @@
       (printex (str "Exception trying to handle slack event\n" (str event) ".") ex))))
 
 
+(def heartbeating (atom false))
+
+(defn heartbeat []
+  (handle-command {:command-type :find-nags
+                   :date         (time/today)}))
+
+(defn start-heartbeat []
+  (swap! heartbeating (constantly true))
+  (future
+    (loop []
+      (Thread/sleep 5000)
+      (heartbeat)
+      (when @heartbeating (recur)))))
+
+(defn stop-heartbeat []
+  (swap! heartbeating (constantly false)))
+
+
 (defn wait-for-console-quit []
   (loop []
     (let [input (read-line)]
@@ -162,6 +181,8 @@
 
 
 (defn shutdown-app []
+  ()
+  (stop-heartbeat)
   (slack/disconnect)
   (println "...lunch-bot dying"))
 
@@ -178,6 +199,7 @@
      (restaurant/initialize-restaurants)
      (alter-var-root (var *api-token*) (constantly api-token))
      (slack/connect *api-token* try-handle-slack-event)
+     (start-heartbeat)
      (println "lunch-bot running...")
      (catch Exception ex
        (println ex)
@@ -206,9 +228,7 @@
 ; todo 'add superdawg http://www.superdawg.com/menu.cfm 773-763-0660'
 ; todo 'superdawg 7737630660 http://www.superdawg.com/menu.cfm' - update restaurant
 ; todo 'bw3 thursday'
-; todo restaurant name links to url
 ; todo 'remove superdog', 'rename superdog superdawg'
-; todo 'payoffs' suggests payments that bring everyone to the average balance
 ; todo recognize 'steve paid carla 23' for privileged users
 ; todo talk converts person's name to "you" in DMs
 ; todo attempt to interpret multi-line messages as one command per line
