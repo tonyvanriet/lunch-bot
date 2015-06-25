@@ -76,6 +76,10 @@
       (dissoc-in uncosted-meals [date :people person :cost])
       uncosted-meals)))
 
+(defmethod apply-event-to-meals :found-nags
+  [meals {:keys [date costless-ins boughtless?] :as event}]
+  (assoc-in meals [date :nagged?] true))
+
 (defmethod apply-event-to-meals :default
   [meal _]
   meal)

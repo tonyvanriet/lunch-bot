@@ -167,15 +167,24 @@
                (command->events cost-plus-tax-cmd aggs-restaurant-with-tax)))))))
 
 
-(deftest no-money-after-lunch-finds-nags
+(deftest no-money-after-lunch-finds-nags-once
   (let [today (time/today)
         person "U1234"
         nag-cmd {:command-type :find-nags
                  :date         today}
-        aggs-no-money {:meals {today {:chosen-restaurant {:name "Five Guys"}
-                                      :people            {person {:status :in}}}}}
-        expected-event {:type         :found-nags
-                        :date         today
-                        :costless-ins [person]
-                        :boughtless?  true}]
-    (is (= [expected-event] (command->events nag-cmd aggs-no-money)))))
+        aggs-no-ins {:meals {today {:people {person {:status :out}}}}}]
+    (testing "nagging meal with no ins yields no events"
+      (is (not (seq (command->events nag-cmd aggs-no-ins)))))
+    (testing "nagging meal with costless-ins or no bought yield nags found event"
+      (let [aggs-no-money {:meals {today {:chosen-restaurant {:name "Five Guys"}
+                                          :people            {person {:status :in}}}}}
+            expected-event {:type         :found-nags
+                            :date         today
+                            :costless-ins [person]
+                            :boughtless?  true}]
+        (is (= [expected-event] (command->events nag-cmd aggs-no-money)))))
+    (testing "nagging meal that's already been nagged yields no events"
+      (let [aggs-no-money-nagged {:meals {today {:chosen-restaurant {:name "Five Guys"}
+                                                 :people            {person {:status :in}}
+                                                 :nagged?           true}}}]
+        (is (not (seq (command->events nag-cmd aggs-no-money-nagged))))))))

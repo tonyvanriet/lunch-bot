@@ -131,12 +131,13 @@
 
 (defmethod command->events :find-nags
   [{:keys [date] :as cmd} {:keys [meals] :as aggs}]
-  (let [meal (get meals date)
-        meal-summary (meal/summary meal)
-        costless-ins (:costless-ins meal-summary)
-        boughtless? (not (seq (:buyers meal-summary)))]
-    (when (or (seq costless-ins) boughtless?)
-      [(make-event cmd :found-nags {:date         date
-                                    :costless-ins costless-ins
-                                    :boughtless?  boughtless?})])))
+  (let [meal (get meals date)]
+    (when-not (:nagged? meal)
+      (let [{:keys [ins costless-ins]} (meal/summary meal)
+            boughtless? (not (seq (:buyers meal)))]
+        (when (seq ins)
+          (when (or (seq costless-ins) boughtless?)
+            [(make-event cmd :found-nags {:date         date
+                                          :costless-ins costless-ins
+                                          :boughtless?  boughtless?})]))))))
 
