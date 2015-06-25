@@ -6,26 +6,10 @@
     [clj-time.core :as time]))
 
 
-(defn make-channel-reply
-  "build a reply to be distributed to a particular channel"
-  [channel-id reply-text]
-  {:distribution :channel, :channel-id channel-id, :text reply-text})
-
-(defn make-lunch-reply
-  "build a reply to be distributed to the designated lunch channel"
-  [reply-text]
-  {:distribution :broadcast, :text reply-text})
-
-(defn make-user-reply
-  "build a reply to be distributed to an individual user"
-  [user-id reply-text]
-  {:distribution :user, :user-id user-id, :text reply-text})
-
-
 (defn make-command-return-reply
   "build a reply to be distributed to the channel that the command was received on"
   [cmd reply-text]
-  (make-channel-reply (:channel-id cmd) reply-text))
+  (talk/make-channel-message (:channel-id cmd) reply-text))
 
 
 (defn events->reply
@@ -52,7 +36,7 @@
 
 (defmethod command->replies [:help nil]
   [cmd _ _]
-  [(make-user-reply (:requestor cmd) (slurp "help.md"))])
+  [(talk/make-user-message (:requestor cmd) (slurp "help.md"))])
 
 (defmethod command->replies [:show :balances]
   [cmd {:keys [balances] :as aggs} _]
@@ -65,7 +49,7 @@
 
 (defmethod command->replies [:show :pay?]
   [{:keys [requestor] :as cmd} {:keys [balances] :as aggs} _]
-  [(make-user-reply requestor (if-let [payment (money/best-payment requestor balances)]
+  [(talk/make-user-message requestor (if-let [payment (money/best-payment requestor balances)]
                                 (talk/event->str payment)
                                 (str "Keep your money.")))])
 
@@ -98,7 +82,7 @@
                      (let [person-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
                        (talk/person-meal-history person-meals todays-restaurant))
                      (str "Somebody needs to choose a restaurant first."))]
-    [(make-user-reply requestor reply-text)]))
+    [(talk/make-user-message requestor reply-text)]))
 
 (defmethod command->replies [:show :discrepancies]
   [cmd {:keys [meals] :as aggs} _]
@@ -108,7 +92,7 @@
 (defmethod command->replies [:submit-payment nil] [cmd _ events]
   (let [requestor-reply (make-command-return-reply cmd (events->reply events))
         paid-event (first (filter #(= (:type %) :paid) events))
-        recipient-reply (make-user-reply (:to paid-event) (talk/event->reply-str paid-event))]
+        recipient-reply (talk/make-user-message (:to paid-event) (talk/event->reply-str paid-event))]
     [requestor-reply recipient-reply]))
 
 (defmethod command->replies [:submit-bought nil] [cmd _ events]
@@ -124,7 +108,7 @@
   [(make-command-return-reply cmd (events->reply events))])
 
 (defmethod command->replies [:choose-restaurant nil] [_ _ events]
-  [(make-lunch-reply (events->reply events))])
+  [(talk/make-lunch-message (events->reply events))])
 
 (defmethod command->replies [:submit-order nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
@@ -138,8 +122,8 @@
   (let [meal (get meals date)
         meal-summary (meal/summary meal)
         costless-ins (:costless-ins meal-summary)
-        cost-replies (vec (map #(make-user-reply % (talk/post-order-summary date meal)) costless-ins))]
+        cost-replies (vec (map #(talk/make-user-message % (talk/post-order-summary date meal)) costless-ins))]
     (if (meal/any-bought? meal)
       cost-replies
-      (conj cost-replies (make-lunch-reply (bought-nag-str date))))))
+      (conj cost-replies (talk/make-lunch-message (bought-nag-str date))))))
 

@@ -194,7 +194,25 @@
     (str "You haven't ordered from " (:name restaurant))))
 
 
+(defn make-channel-message
+  "build a message to be distributed to a particular channel"
+  [channel-id text]
+  {:distribution :channel, :channel-id channel-id, :text text})
+
+(defn make-lunch-message
+  "build a message to be distributed to the designated lunch channel"
+  [text]
+  {:distribution :broadcast, :text text})
+
+(defn make-user-message
+  "build a reply to be distributed to an individual user"
+  [user-id text]
+  {:distribution :user, :user-id user-id, :text text})
+
+
 (defn say-message
-  [channel-id message]
-  (tx/say-message channel-id message))
+  [channel-id text]
+  (tx/say-message channel-id text))
+
+
 
