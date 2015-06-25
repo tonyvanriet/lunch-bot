@@ -127,11 +127,11 @@
 
 (defmethod command-template->command [:nag :date]
   [[[_ _] [_ date]]]
-  {:command-type :send-nags
+  {:command-type :find-nags
    :date date})
 
 (defmethod command-template->command [:nag]
   [[action-elem]]
-  {:command-type :send-nags
+  {:command-type :find-nags
    :date (time/today)})
 

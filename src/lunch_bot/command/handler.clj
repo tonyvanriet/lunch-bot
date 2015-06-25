@@ -1,5 +1,6 @@
 (ns lunch-bot.command.handler
-  (:require [clojure.core.incubator :refer [dissoc-in]])
+  (:require [clojure.core.incubator :refer [dissoc-in]]
+            [lunch-bot.meal :as meal])
   (:import (java.math RoundingMode)))
 
 
@@ -126,3 +127,16 @@
   [{:keys [food date] :as cmd} _]
   [(make-event cmd :order {:food food
                            :date date})])
+
+
+(defmethod command->events :find-nags
+  [{:keys [date] :as cmd} {:keys [meals] :as aggs}]
+  (let [meal (get meals date)
+        meal-summary (meal/summary meal)
+        costless-ins (:costless-ins meal-summary)
+        boughtless? (not (seq (:buyers meal-summary)))]
+    (when (or (seq costless-ins) boughtless?)
+      [(make-event cmd :found-nags {:date         date
+                                    :costless-ins costless-ins
+                                    :boughtless?  boughtless?})])))
+

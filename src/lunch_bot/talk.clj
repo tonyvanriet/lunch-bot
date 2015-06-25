@@ -194,6 +194,7 @@
     (str "You haven't ordered from " (:name restaurant))))
 
 
+  [date]
 (defn make-channel-message
   "build a message to be distributed to a particular channel"
   [channel-id text]

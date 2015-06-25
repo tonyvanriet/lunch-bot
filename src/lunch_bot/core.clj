@@ -27,22 +27,52 @@
 (defn get-lunch-channel-id [] (:id (state/name->channel lunch-channel-name)))
 
 
-(defn dispatch-handle-event [event] (:type event))
+(defn get-user-dm-id
+  "get the direct message channel id for this user.
+  open the dm channel if it hasn't been opened yet."
+  [user-id]
+  (if-let [dm-id (state/user-id->dm-id user-id)]
+    dm-id
+    (web/im-open *api-token* user-id)))
+
+
+(defn distribute-message
+  [{distribution :distribution, text :text, :as msg}]
+  (let [channel-id (case distribution
+                     :channel (:channel-id msg)
+                     :broadcast (get-lunch-channel-id)
+                     :user (get-user-dm-id (:user-id msg)))]
+    (talk/say-message channel-id text)))
+
+
+(defn dispatch-handle-event [event aggs] (:type event))
 
 (defmulti handle-event
           "performs side-effects for the event"
           #'dispatch-handle-event)
 
-(defmethod handle-event :default [_] nil)
+(defmethod handle-event :default [_ _] nil)
 
 (defmethod handle-event :choose
-  [event]
+  [event _]
   (let [restaurant (:restaurant event)
         menu-url (:menu-url restaurant)
         channel-id (get-lunch-channel-id)]
     (web/channels-setTopic *api-token* channel-id
                            (str "ordering " (:name restaurant)
                                 (when menu-url (str " " menu-url))))))
+
+(defmethod handle-event :found-nags
+  [{:keys [date costless-ins boughtless?] :as event} {:keys [meals] :as aggs}]
+  (let [meal (get meals date)
+        post-order-summary (talk/post-order-summary date meal)
+        cost-nag-messages (map #(talk/make-user-message % post-order-summary) costless-ins)
+        bought-nag-message (talk/make-lunch-message (talk/bought-nag date))
+        nag-messages (if boughtless?
+                       (conj cost-nag-messages bought-nag-message)
+                       cost-nag-messages)]
+    (doseq [msg nag-messages]
+      (distribute-message msg))))
 
 
 (defn handle-command
@@ -52,9 +82,10 @@
   (let [aggs (aggregate/get-aggregates)
         events (handler/command->events cmd aggs)]
     (doseq [event events]
-      (event/commit-event event)
-      (handle-event event))
+      (event/commit-event event))
     (let [updated-aggs (aggregate/get-aggregates)]
+      (doseq [event events]
+        (handle-event event updated-aggs))
       (reply/command->replies cmd updated-aggs events))))
 
 
@@ -67,15 +98,6 @@
       (assoc :cmd-text cmd-text)
       (assoc :channel-id channel-id)
       (assoc :ts ts)))
-
-
-(defn get-user-dm-id
-  "get the direct message channel id for this user.
-  open the dm channel if it hasn't been opened yet."
-  [user-id]
-  (if-let [dm-id (state/user-id->dm-id user-id)]
-    dm-id
-    (web/im-open *api-token* user-id)))
 
 
 (defn printex
@@ -96,12 +118,8 @@
       (let [raw-cmd (command/command-text->command cmd-text)
             cmd (contextualize-command raw-cmd msg cmd-text)
             replies (handle-command cmd)]
-        (doseq [{distribution :distribution, reply-text :text, :as reply} replies]
-          (let [reply-channel-id (case distribution
-                                   :channel (:channel-id reply)
-                                   :broadcast (get-lunch-channel-id)
-                                   :user (get-user-dm-id (:user-id reply)))]
-            (talk/say-message reply-channel-id reply-text)))))
+        (doseq [reply replies]
+          (distribute-message reply))))
     (catch Exception ex
       (printex (str "Exception trying to handle slack message\n" (str msg) ".") ex)
       (try (talk/say-message channel-id "@!#?@!")))))

@@ -165,3 +165,17 @@
                                         :date          today}]
         (is (= [expected-cost-event-custom]
                (command->events cost-plus-tax-cmd aggs-restaurant-with-tax)))))))
+
+
+(deftest no-money-after-lunch-finds-nags
+  (let [today (time/today)
+        person "U1234"
+        nag-cmd {:command-type :find-nags
+                 :date         today}
+        aggs-no-money {:meals {today {:chosen-restaurant {:name "Five Guys"}
+                                      :people            {person {:status :in}}}}}
+        expected-event {:type         :found-nags
+                        :date         today
+                        :costless-ins [person]
+                        :boughtless?  true}]
+    (is (= [expected-event] (command->events nag-cmd aggs-no-money)))))
