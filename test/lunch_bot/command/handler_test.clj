@@ -172,19 +172,28 @@
         person "U1234"
         nag-cmd {:command-type :find-nags
                  :date         today}
+        before-nag-time (time/minus mid-afternoon-nag-time (time/minutes 5))
+        after-nag-time (time/plus mid-afternoon-nag-time (time/minutes 5))
         aggs-no-ins {:meals {today {:people {person {:status :out}}}}}]
     (testing "nagging meal with no ins yields no events"
-      (is (not (seq (command->events nag-cmd aggs-no-ins)))))
-    (testing "nagging meal with costless-ins or no bought yield nags found event"
+      (is (-> (command->events nag-cmd aggs-no-ins) (seq) (not))))
+    (testing "nagging meal costless-ins or no bought before nag time yields no events"
+      (let [aggs-no-money {:meals {today {:chosen-restaurant {:name "Five Guys"}
+                                          :people            {person {:status :in}}}}}]
+        (with-redefs [time/time-now (constantly before-nag-time)]
+          (is (-> (command->events nag-cmd aggs-no-ins) (seq) (not))))))
+    (testing "nagging meal with costless-ins or no bought after nag time yields nags-found event"
       (let [aggs-no-money {:meals {today {:chosen-restaurant {:name "Five Guys"}
                                           :people            {person {:status :in}}}}}
             expected-event {:type         :found-nags
                             :date         today
                             :costless-ins [person]
                             :boughtless?  true}]
-        (is (= [expected-event] (command->events nag-cmd aggs-no-money)))))
+        (with-redefs [time/time-now (constantly after-nag-time)]
+          (is (= [expected-event] (command->events nag-cmd aggs-no-money))))))
     (testing "nagging meal that's already been nagged yields no events"
       (let [aggs-no-money-nagged {:meals {today {:chosen-restaurant {:name "Five Guys"}
                                                  :people            {person {:status :in}}
                                                  :nagged?           true}}}]
-        (is (not (seq (command->events nag-cmd aggs-no-money-nagged))))))))
+        (with-redefs [time/time-now (constantly after-nag-time)]
+          (is (-> (command->events nag-cmd aggs-no-money-nagged) (seq) (not))))))))

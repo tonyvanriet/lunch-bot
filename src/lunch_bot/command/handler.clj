@@ -1,10 +1,13 @@
 (ns lunch-bot.command.handler
   (:require [clojure.core.incubator :refer [dissoc-in]]
-            [lunch-bot.meal :as meal])
+            [lunch-bot.meal :as meal]
+            [clj-time.core :as time])
   (:import (java.math RoundingMode)))
 
 
 (def default-sales-tax-rate 0.0925M)
+
+(def mid-afternoon-nag-time (time/local-time 15))
 
 
 (defn assoc-if
@@ -131,13 +134,14 @@
 
 (defmethod command->events :find-nags
   [{:keys [date] :as cmd} {:keys [meals] :as aggs}]
-  (let [meal (get meals date)]
-    (when-not (:nagged? meal)
-      (let [{:keys [ins costless-ins]} (meal/summary meal)
-            boughtless? (not (seq (:buyers meal)))]
-        (when (seq ins)
-          (when (or (seq costless-ins) boughtless?)
-            [(make-event cmd :found-nags {:date         date
-                                          :costless-ins costless-ins
-                                          :boughtless?  boughtless?})]))))))
+  (let [meal (get meals date)
+        {:keys [ins costless-ins]} (meal/summary meal)
+        boughtless? (not (seq (:buyers meal)))]
+    (when (and (not (:nagged? meal))
+               (seq ins)
+               (or (seq costless-ins) boughtless?)
+               (time/after? (time/time-now) mid-afternoon-nag-time))
+      [(make-event cmd :found-nags {:date         date
+                                    :costless-ins costless-ins
+                                    :boughtless?  boughtless?})])))
 
