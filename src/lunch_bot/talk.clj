@@ -155,7 +155,7 @@
            (str (people->str ins) " " (if multiple-ins? "were" "was") " *in*" "\n"))
          (if (seq costless-ins)
            (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
-                (if (= (count costless-ins) 1) "." "es.") "\n")
+                (when (= (> (count costless-ins) 1) "es") "\n"))
            (str buyers-str " " (if multiple-buyers? "are" "is")
                 (cond (= buyer-surplus 0M) (str " squared away")
                       (< buyer-surplus 0M) (str " " (- buyer-surplus) " ahead")
@@ -194,7 +194,11 @@
     (str "You haven't ordered from " (:name restaurant))))
 
 
+(defn bought-nag
   [date]
+  (str "If you bought lunch" (when (not= date (time/today)) (str " on " date)) ", let me know."))
+
+
 (defn make-channel-message
   "build a message to be distributed to a particular channel"
   [channel-id text]

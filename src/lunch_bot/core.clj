@@ -15,9 +15,7 @@
      [team-state :as state]
      [web :as web]]))
 
-;
-; config
-;
+
 (def api-token-filename "api-token.txt")
 (def lunch-channel-name "lunch")
 
