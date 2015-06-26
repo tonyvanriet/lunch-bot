@@ -165,7 +165,11 @@
   (swap! heartbeating (constantly true))
   (future
     (loop []
+      (print "\\")
+      (flush)
       (Thread/sleep 5000)
+      (print "/")
+      (flush)
       (heartbeat)
       (when @heartbeating (recur)))))
 
