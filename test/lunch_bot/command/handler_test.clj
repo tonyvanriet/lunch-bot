@@ -182,15 +182,26 @@
                                           :people            {person {:status :in}}}}}]
         (with-redefs [time/time-now (constantly before-nag-time)]
           (is (-> (command->events nag-cmd aggs-no-ins) (seq) (not))))))
-    (testing "nagging meal with costless-ins or no bought after nag time yields nags-found event"
-      (let [aggs-no-money {:meals {today {:chosen-restaurant {:name "Five Guys"}
-                                          :people            {person {:status :in}}}}}
+    (testing "nagging meal with costless-ins after nag time yields nags-found event"
+      (let [aggs-missing-cost {:meals {today {:chosen-restaurant {:name "Five Guys"}
+                                              :people            {person {:status :in
+                                                                          :bought 12.34M}}}}}
             expected-event {:type         :found-nags
                             :date         today
                             :costless-ins [person]
+                            :boughtless?  false}]
+        (with-redefs [time/time-now (constantly after-nag-time)]
+          (is (= [expected-event] (command->events nag-cmd aggs-missing-cost))))))
+    (testing "nagging meal with no buyers after nag time yields nags-found event"
+      (let [aggs-no-bought {:meals {today {:chosen-restaurant {:name "Five Guys"}
+                                           :people            {person {:status :in
+                                                                       :cost   4.56M}}}}}
+            expected-event {:type         :found-nags
+                            :date         today
+                            :costless-ins []
                             :boughtless?  true}]
         (with-redefs [time/time-now (constantly after-nag-time)]
-          (is (= [expected-event] (command->events nag-cmd aggs-no-money))))))
+          (is (= [expected-event] (command->events nag-cmd aggs-no-bought))))))
     (testing "nagging meal that's already been nagged yields no events"
       (let [aggs-no-money-nagged {:meals {today {:chosen-restaurant {:name "Five Guys"}
                                                  :people            {person {:status :in}}
