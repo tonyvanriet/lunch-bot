@@ -142,10 +142,10 @@
 (defmethod command-template->command [:nag :date]
   [[[_ _] [_ date]]]
   {:command-type :find-nags
-   :date date})
+   :date         date})
 
 (defmethod command-template->command [:nag]
   [[action-elem]]
   {:command-type :find-nags
-   :date (time/today)})
+   :date         (time/today)})
 

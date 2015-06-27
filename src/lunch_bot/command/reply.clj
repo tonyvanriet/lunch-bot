@@ -50,8 +50,8 @@
 (defmethod command->replies [:show :pay?]
   [{:keys [requestor] :as cmd} {:keys [balances] :as aggs} _]
   [(talk/make-user-message requestor (if-let [payment (money/best-payment requestor balances)]
-                                (talk/event->str payment)
-                                (str "Keep your money.")))])
+                                       (talk/event->str payment)
+                                       (str "Keep your money.")))])
 
 (defmethod command->replies [:show :payoffs]
   [cmd {:keys [balances] :as aggs} _]

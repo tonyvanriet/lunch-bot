@@ -199,7 +199,7 @@
 
 (defn bought-nag
   [date]
-  (str "If you bought lunch" (when (not= date (time/today)) (str " on " date)) ", let me know."))
+  (str "If you bought lunch" (when (not= date (time/today)) (str " on " date)) ", let me know"))
 
 
 (defn make-channel-message

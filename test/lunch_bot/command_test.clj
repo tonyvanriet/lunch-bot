@@ -38,20 +38,20 @@
     "" nil))
 
 
-(deftest command-realization
+(deftest cost-command-realization
   (let [amount 12.34M
         date (time/local-date 2015 5 1)
         expected-command {:command-type :submit-cost
                           :amount       amount
                           :+tax?        :+tax
                           :date         date}]
-    (testing "cost amount +tax date yields command with cost event"
+    (testing "cost amount +tax date yields submit-cost command"
       (is (= expected-command
              (command-template->command [[:cost :cost]
                                          [:amount amount]
                                          [:+tax :+tax]
                                          [:date date]]))))
-    (testing "cost date amount +tax yields command with cost event"
+    (testing "cost date amount +tax yields submit-cost command"
       (is (= expected-command
              (command-template->command [[:cost :cost]
                                          [:date date]
