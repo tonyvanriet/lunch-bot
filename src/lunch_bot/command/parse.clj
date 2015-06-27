@@ -19,6 +19,7 @@
 
 (def action-str-map {:show   ["show"]
                      :paid   ["paid"]
+                     :owe    ["owe"]
                      :bought ["bought"]
                      :cost   ["cost"]
                      :choose ["choose"]

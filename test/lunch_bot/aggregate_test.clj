@@ -85,3 +85,92 @@
           (is (= (:restaurant second-choose-event) (get-in (meals) [date :chosen-restaurant])))
           (is (contains? (get-in (meals) [date :people]) person))
           (is (not (contains? (get-in (meals) [date :people person]) :order))))))))
+
+
+(deftest borrowed-events-adjust-balances-correctly
+  (let [acting-person "U1234"
+        other-person "U5678"
+        initial-paid-amount 12.34M
+        initial-events [{:person acting-person
+                         :type   :paid
+                         :to     other-person
+                         :amount initial-paid-amount
+                         :date   (time/today)}]]
+    (with-redefs [event/get-committed-events (constantly initial-events)]
+      (let [expected-balances {acting-person initial-paid-amount
+                               other-person  (* -1 initial-paid-amount)}]
+        (is (= expected-balances (balances)))))
+    (let [borrowed-amount (* 2.5 initial-paid-amount)
+          borrowed-event {:person acting-person
+                          :type   :borrowed
+                          :from   other-person
+                          :amount borrowed-amount
+                          :date   (time/today)}
+          expected-balances {acting-person (- initial-paid-amount borrowed-amount)
+                             other-person  (- borrowed-amount initial-paid-amount)}]
+      (with-redefs [event/get-committed-events (constantly (conj initial-events borrowed-event))]
+        (is (= expected-balances (balances)))))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

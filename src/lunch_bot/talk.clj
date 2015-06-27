@@ -73,6 +73,9 @@
 (defmethod event->str :paid [{:keys [person amount to date]}]
   (str (person->str person) " paid " (person->str to) " " amount (relative-date-str date)))
 
+(defmethod event->str :borrowed [{:keys [person amount from date]}]
+  (str (person->str person) " owes " (person->str from) " " amount (relative-date-str date)))
+
 (defmethod event->str :should-pay [{:keys [person amount to]}]
   (str (person->str person) " should pay " (person->str to) " " amount))
 
@@ -106,7 +109,7 @@
 (defn event->reply-str
   [event]
   (case (:type event)
-    (:paid :bought :cost :uncost :should-pay) (event->str event)
+    (:paid :borrowed :bought :cost :uncost :should-pay) (event->str event)
     :choose (let [{:keys [name menu-url]} (:restaurant event)]
               (str name " it is!" (when menu-url (str "\nHere's the menu: " menu-url))))
     :in (str (rand-nth [":metal:" ":rocket:" ":clap:" ":thumbsup:" ":dancers:" ":facepunch:"]))

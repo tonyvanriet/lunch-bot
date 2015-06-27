@@ -63,6 +63,12 @@
                           :to     to
                           :date   date})])
 
+(defmethod command->events :submit-debt
+  [{:keys [amount from date] :as cmd} _]
+  [(make-event cmd :borrowed {:amount amount
+                              :from   from
+                              :date   date})])
+
 (defmethod command->events :submit-bought
   [{:keys [amount date requestor] :as cmd} {:keys [meals] :as aggs}]
   (let [meal (get meals date)

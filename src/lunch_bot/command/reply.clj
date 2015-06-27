@@ -95,6 +95,12 @@
         recipient-reply (talk/make-user-message (:to paid-event) (talk/event->reply-str paid-event))]
     [requestor-reply recipient-reply]))
 
+(defmethod command->replies [:submit-debt nil] [cmd _ events]
+  (let [requestor-reply (make-command-return-reply cmd (events->reply events))
+        borrowed-event (first (filter #(= (:type %) :borrowed) events))
+        recipient-reply (talk/make-user-message (:from borrowed-event) (talk/event->reply-str borrowed-event))]
+    [requestor-reply recipient-reply]))
+
 (defmethod command->replies [:submit-bought nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
 
