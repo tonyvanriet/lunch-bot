@@ -53,16 +53,16 @@
   (command-template->command [action-elem user-elem amount-elem]))
 
 ;
-; owe templates
+; borrowed/owe templates
 ;
-(defmethod command-template->command [:owe :user :amount]
+(defmethod command-template->command [:borrowed :user :amount]
   [[[_ _] [_ user-id] [_ amount]]]
   {:command-type :submit-debt
    :amount       amount
    :from         user-id
    :date         (time/today)})
 
-(defmethod command-template->command [:owe :amount :user]
+(defmethod command-template->command [:borrowed :amount :user]
   [[action-elem amount-elem user-elem]]
   (command-template->command [action-elem user-elem amount-elem]))
 

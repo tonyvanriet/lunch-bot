@@ -74,7 +74,7 @@
   (str (person->str person) " paid " (person->str to) " " amount (relative-date-str date)))
 
 (defmethod event->str :borrowed [{:keys [person amount from date]}]
-  (str (person->str person) " owes " (person->str from) " " amount (relative-date-str date)))
+  (str (person->str person) " borrowed " amount " from " (person->str from) (relative-date-str date)))
 
 (defmethod event->str :should-pay [{:keys [person amount to]}]
   (str (person->str person) " should pay " (person->str to) " " amount))

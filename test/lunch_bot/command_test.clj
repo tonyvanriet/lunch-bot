@@ -60,22 +60,22 @@
 
 
 (deftest owe-command-realization
-  (let [to-person "U1234"
+  (let [from-person "U1234"
         amount 12.34M
         date (time/today)
         expected-command {:command-type :submit-debt
-                          :to           to-person
+                          :from         from-person
                           :amount       amount
                           :date         date}]
     (testing "owe person amount yields submit-debt command"
       (is (= expected-command
-             (command-template->command [[:owe :owe]
-                                         [:user to-person]
+             (command-template->command [[:borrowed :borrowed]
+                                         [:user from-person]
                                          [:amount amount]]))))
     (testing "owe amount person yields submit-debt command"
       (is (= expected-command
-             (command-template->command [[:owe :owe]
+             (command-template->command [[:borrowed :borrowed]
                                          [:amount amount]
-                                         [:user to-person]]))))))
+                                         [:user from-person]]))))))
 
 

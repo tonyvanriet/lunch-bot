@@ -17,18 +17,18 @@
       (str/replace "\n" "\n ")
       (str/split #" +")))
 
-(def action-str-map {:show   ["show"]
-                     :paid   ["paid"]
-                     :owe    ["owe"]
-                     :bought ["bought"]
-                     :cost   ["cost"]
-                     :choose ["choose"]
-                     :order  ["order"]
-                     :in     ["in"]
-                     :out    ["out"]
-                     :help   ["help"]
-                     :+tax   ["tax" "+tax"]
-                     :nag    ["nags"]})
+(def action-str-map {:show     ["show"]
+                     :paid     ["paid"]
+                     :borrowed ["borrowed " "owe"]
+                     :bought   ["bought"]
+                     :cost     ["cost"]
+                     :choose   ["choose"]
+                     :order    ["order"]
+                     :in       ["in"]
+                     :out      ["out"]
+                     :help     ["help"]
+                     :+tax     ["tax" "+tax"]
+                     :nag      ["nags"]})
 
 (def noun-str-map {:balances      ["balances"]
                    :pay?          ["pay?"]
@@ -38,7 +38,7 @@
                    :discrepancies ["discrepancy" "discrepancies"]})
 
 (def filler-str-map {:filler ["lunch" "for" "i" "my" "i'm" "on" "have"
-                              "the" "what" "who" "should" "+" "plus"]})
+                              "the" "what" "who" "should" "+" "plus" "from"]})
 
 (def relative-date-str-map {:today     ["today"]
                             :yesterday ["yesterday"]})
