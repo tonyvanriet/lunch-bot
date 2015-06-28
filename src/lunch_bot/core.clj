@@ -159,7 +159,9 @@
 
 (defn heartbeat []
   (handle-command {:command-type :find-nags
-                   :date         (time/today)}))
+                   :date         (time/today)
+                   :ts           (slack/time->ts (time/now))}))
+
 
 (defn start-heartbeat []
   (swap! heartbeating (constantly true))
