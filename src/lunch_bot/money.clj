@@ -36,9 +36,9 @@
   "turns a stream of events into a map of balances for each person"
   [events]
   (let [balance-changes (events->balance-changes events)
-        balance-changes-by-person (group-by #(:person %) balance-changes)]
+        balance-changes-by-person (group-by :person balance-changes)]
     (into {} (for [[person balance-changes] balance-changes-by-person]
-               [person (reduce + (map #(:amount %) balance-changes))]))))
+               [person (reduce + (map :amount balance-changes))]))))
 
 
 (defn apply-event
