@@ -156,14 +156,13 @@
            (str buyers-str " *bought*" "\n"))
          (when (seq ins)
            (str (people->str ins) " " (if multiple-ins? "were" "was") " *in*" "\n"))
-         (if (seq costless-ins)
+         (when (seq costless-ins)
            (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
-                (when (= (> (count costless-ins) 1) "es") "\n"))
-           (str buyers-str " " (if multiple-buyers? "are" "is")
-                (cond (= buyer-surplus 0M) (str " squared away")
-                      (< buyer-surplus 0M) (str " " (- buyer-surplus) " ahead")
-                      (> buyer-surplus 0M) (str " " buyer-surplus " short"))
-                "\n")))))
+                (when (= (> (count costless-ins) 1) "es")) "\n"))
+         (str (cond (= buyer-surplus 0M) (str "We're squared away")
+                    (< buyer-surplus 0M) (str "We have an extra " (* -1 buyer-surplus))
+                    (> buyer-surplus 0M) (str "We're " buyer-surplus " short")))
+         "\n")))
 
 
 (defn discrepant-meal-summary
