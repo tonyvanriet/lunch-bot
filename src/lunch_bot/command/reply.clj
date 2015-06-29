@@ -89,23 +89,39 @@
   (let [discrepant-meals (filter #(meal/is-discrepant (val %)) meals)]
     [(make-command-return-reply cmd (talk/discrepant-meals-summary discrepant-meals))]))
 
-(defmethod command->replies [:submit-payment nil] [cmd _ events]
-  (let [requestor-reply (make-command-return-reply cmd (events->reply events))
-        paid-event (first (filter #(= (:type %) :paid) events))
-        recipient-reply (talk/make-user-message (:to paid-event) (talk/event->reply-str paid-event))]
-    [requestor-reply recipient-reply]))
+(defmethod command->replies [:submit-payment nil]
+  [{:keys [amount to] :as cmd} _ events]
+  (cond (< amount 0M) [(make-command-return-reply
+                         cmd (str "You can't pay a negative amount. Try using the borrowed command."))]
+        (= amount 0M) [(make-command-return-reply
+                         cmd (str "You paid " (talk/person->str to) " 0? Good for you."))]
+        :else (let [requestor-reply (make-command-return-reply cmd (events->reply events))
+                    paid-event (first (filter #(= (:type %) :paid) events))
+                    recipient-reply (talk/make-user-message (:to paid-event)
+                                                            (talk/event->reply-str paid-event))]
+                [requestor-reply recipient-reply])))
 
-(defmethod command->replies [:submit-debt nil] [cmd _ events]
-  (let [requestor-reply (make-command-return-reply cmd (events->reply events))
-        borrowed-event (first (filter #(= (:type %) :borrowed) events))
-        recipient-reply (talk/make-user-message (:from borrowed-event) (talk/event->reply-str borrowed-event))]
-    [requestor-reply recipient-reply]))
+(defmethod command->replies [:submit-debt nil]
+  [{:keys [amount from] :as cmd} _ events]
+  (cond (< amount 0M) [(make-command-return-reply
+                         cmd (str "You can't borrow a negative amount. Try using the paid command."))]
+        (= amount 0M) [(make-command-return-reply
+                         cmd (str "You borrowed 0 from " (talk/person->str from) "? Good for you."))]
+        :else (let [requestor-reply (make-command-return-reply cmd (events->reply events))
+                    borrowed-event (first (filter #(= (:type %) :borrowed) events))
+                    recipient-reply (talk/make-user-message (:from borrowed-event)
+                                                            (talk/event->reply-str borrowed-event))]
+                [requestor-reply recipient-reply])))
 
-(defmethod command->replies [:submit-bought nil] [cmd _ events]
-  [(make-command-return-reply cmd (events->reply events))])
+(defmethod command->replies [:submit-bought nil]
+  [{:keys [amount] :as cmd} _ events]
+  (cond (< amount 0M) [(make-command-return-reply cmd (str "You can't buy lunch for less than 0."))]
+        :else [(make-command-return-reply cmd (events->reply events))]))
 
-(defmethod command->replies [:submit-cost nil] [cmd _ events]
-  [(make-command-return-reply cmd (events->reply events))])
+(defmethod command->replies [:submit-cost nil]
+  [{:keys [amount] :as cmd} _ events]
+  (cond (< amount 0M) [(make-command-return-reply cmd (str "Your lunch can't cost less than 0."))]
+        :else [(make-command-return-reply cmd (events->reply events))]))
 
 (defmethod command->replies [:declare-in nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])

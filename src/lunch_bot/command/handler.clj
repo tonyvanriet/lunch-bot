@@ -59,47 +59,51 @@
 
 (defmethod command->events :submit-payment
   [{:keys [amount to date] :as cmd} _]
-  [(make-event cmd :paid {:amount amount
-                          :to     to
-                          :date   date})])
+  (when (> amount 0M)
+    [(make-event cmd :paid {:amount amount
+                            :to     to
+                            :date   date})]))
 
 (defmethod command->events :submit-debt
   [{:keys [amount from date] :as cmd} _]
-  [(make-event cmd :borrowed {:amount amount
-                              :from   from
-                              :date   date})])
+  (when (> amount 0M)
+    [(make-event cmd :borrowed {:amount amount
+                                :from   from
+                                :date   date})]))
 
 (defmethod command->events :submit-bought
   [{:keys [amount date requestor] :as cmd} {:keys [meals] :as aggs}]
-  (let [meal (get meals date)
-        previous-bought-amount (get-in meal [:people requestor :bought])
-        unbought-event (when previous-bought-amount
-                         (make-event cmd :unbought {:amount previous-bought-amount
-                                                    :date   date}))
-        bought-event (make-event cmd :bought {:amount amount
-                                              :date   date})]
-    (if unbought-event
-      [unbought-event bought-event]
-      [bought-event])))
+  (when (>= amount 0M)
+    (let [meal (get meals date)
+          previous-bought-amount (get-in meal [:people requestor :bought])
+          unbought-event (when previous-bought-amount
+                           (make-event cmd :unbought {:amount previous-bought-amount
+                                                      :date   date}))
+          bought-event (make-event cmd :bought {:amount amount
+                                                :date   date})]
+      (if unbought-event
+        [unbought-event bought-event]
+        [bought-event]))))
 
 (defmethod command->events :submit-cost
   [{:keys [amount +tax? date requestor] :as cmd} {:keys [meals] :as aggs}]
-  (let [meal (get meals date)
-        restaurant (:chosen-restaurant meal)
-        sales-tax-rate (if (:sales-tax-rate restaurant)
-                         (:sales-tax-rate restaurant)
-                         default-sales-tax-rate)
-        previous-cost-amount (get-in meal [:people requestor :cost])
-        uncost-event (when previous-cost-amount
-                       (make-event cmd :uncost {:amount previous-cost-amount
-                                                :date   date}))
-        pretax-cost-event (make-event cmd :cost {:amount amount
-                                                 :+tax?  +tax?
-                                                 :date   date})
-        cost-event (apply-sales-tax pretax-cost-event sales-tax-rate)]
-    (if uncost-event
-      [uncost-event cost-event]
-      [cost-event])))
+  (when (>= amount 0M)
+    (let [meal (get meals date)
+          restaurant (:chosen-restaurant meal)
+          sales-tax-rate (if (:sales-tax-rate restaurant)
+                           (:sales-tax-rate restaurant)
+                           default-sales-tax-rate)
+          previous-cost-amount (get-in meal [:people requestor :cost])
+          uncost-event (when previous-cost-amount
+                         (make-event cmd :uncost {:amount previous-cost-amount
+                                                  :date   date}))
+          pretax-cost-event (make-event cmd :cost {:amount amount
+                                                   :+tax?  +tax?
+                                                   :date   date})
+          cost-event (apply-sales-tax pretax-cost-event sales-tax-rate)]
+      (if uncost-event
+        [uncost-event cost-event]
+        [cost-event]))))
 
 (defmethod command->events :declare-in
   [{:keys [date] :as cmd} _]
