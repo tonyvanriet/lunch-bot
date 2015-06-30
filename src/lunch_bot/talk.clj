@@ -143,7 +143,7 @@
            (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
          (when (seq outs)
            (str (people->str outs) " " (if (= (count outs) 1) "is" "are") " *out*" "\n"))
-         (when (seq orderless-ins)
+         (when (and chosen-restaurant-name (seq orderless-ins))
            (str "Waiting for " (if (= (count orderless-ins) 1) "an order" "orders")
                 " from " (people->str orderless-ins) "\n"))
          "\n"
@@ -157,7 +157,7 @@
         multiple-buyers? (> (count buyers) 1)]
     (str (if chosen-restaurant-name
            (str "Ordered from " chosen-restaurant-name (relative-date-str date))
-           (str "No restaurant chosen")) "\n"
+           (str "No restaurant chosen" (relative-date-str date))) "\n"
          (when (seq buyers)
            (str buyers-str " *bought*" "\n"))
          (when (seq ins)
