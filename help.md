@@ -26,6 +26,10 @@ Money
 
 >I *paid* _steve_  _78_
 
+>I *borrowed* _20_ from _jane_
+
+>I *owe* _chris_ _12.34_
+
 Info
 >show *today*
 
