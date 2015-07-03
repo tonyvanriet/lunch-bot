@@ -43,11 +43,7 @@
 
 (defmethod apply-event-to-meals :choose
   [meals {:keys [date restaurant] :as event}]
-  (let [person-meals (-> meals (get date) :people)
-        person-meals-orders-removed (update-vals person-meals #(dissoc % :order))]
-    (-> meals
-        (assoc-in [date :people] person-meals-orders-removed)
-        (assoc-in [date :chosen-restaurant] restaurant))))
+  (assoc-in meals [date :chosen-restaurant] restaurant))
 
 (defmethod apply-event-to-meals :order
   [meals {:keys [date person food] :as event}]
