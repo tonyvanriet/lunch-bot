@@ -54,9 +54,13 @@
        (edn->events)))
 
 
-(defn write-events
+(defn overwrite-events
   [events filename]
   (spit filename (events->edn events)))
+
+(defn append-event
+  [event filename]
+  (spit filename (events->edn [event]) :append true))
 
 
 (defn read-restaurants
