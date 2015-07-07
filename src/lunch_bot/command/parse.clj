@@ -32,7 +32,6 @@
 
 (def noun-str-map {:balances      ["balances"]
                    :pay?          ["pay?"]
-                   :payoffs       ["payoffs"]
                    :history       ["history"]
                    :ordered?      ["ordered?"]
                    :discrepancies ["discrepancy" "discrepancies"]})

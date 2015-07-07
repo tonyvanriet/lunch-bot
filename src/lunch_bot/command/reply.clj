@@ -53,7 +53,7 @@
                                        (talk/event->str payment)
                                        (str "Keep your money.")))])
 
-(defmethod command->replies [:show :payoffs]
+#_(defmethod command->replies [:show :payoffs]
   [cmd {:keys [balances] :as aggs} _]
   (->> balances
        (money/minimal-payoffs)
