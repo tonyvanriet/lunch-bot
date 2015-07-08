@@ -15,7 +15,7 @@
 (defn commit-event
   [event]
   (swap! committed-events #(conj % event))
-  (store/append-event event events-filename))
+  (store/overwrite-events @committed-events events-filename))
 
 
 (defn get-committed-events []
