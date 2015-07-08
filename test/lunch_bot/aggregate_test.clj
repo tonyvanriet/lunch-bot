@@ -62,7 +62,7 @@
         (is (= second-bought-amount (get-in (meals) [date :people person :bought])))))))
 
 
-(deftest clear-orders-when-restaurant-choice-changes
+(deftest dont-clear-orders-when-restaurant-choice-changes
   (let [person "U1234"
         date (time/today)
         order-event {:type   :order
@@ -77,14 +77,14 @@
       (with-redefs [event/get-committed-events (constantly init-events)]
         (is (= (:restaurant choose-event) (get-in (meals) [date :chosen-restaurant])))
         (is (= (:food order-event) (get-in (meals) [date :people person :order])))))
-    (testing "different restaurant chosen, orders cleared"
+    (testing "different restaurant chosen, orders not cleared"
       (let [second-choose-event {:type       :choose
                                  :restaurant {:name "Chipotle"}
                                  :date       date}]
         (with-redefs [event/get-committed-events (constantly (conj init-events second-choose-event))]
           (is (= (:restaurant second-choose-event) (get-in (meals) [date :chosen-restaurant])))
           (is (contains? (get-in (meals) [date :people]) person))
-          (is (not (contains? (get-in (meals) [date :people person]) :order))))))))
+          (is (= (:food order-event) (get-in (meals) [date :people person :order]))))))))
 
 
 (deftest borrowed-events-adjust-balances-correctly
