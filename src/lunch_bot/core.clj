@@ -19,6 +19,7 @@
 
 (def api-token-filename "api-token.txt")
 (def lunch-channel-name "lunch")
+(def commands-filename "commands.edn")
 
 (def ^:dynamic *api-token* nil)
 
@@ -78,6 +79,7 @@
   "translates the command into events, commits the events to the stream,
   handles the events, and returns replies."
   [cmd]
+  (store/append-command cmd commands-filename)
   (let [aggs (aggregate/get-aggregates)
         events (handler/command->events cmd aggs)]
     (doseq [event events]

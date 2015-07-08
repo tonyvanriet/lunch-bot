@@ -25,48 +25,53 @@
 (defn- inst->local-date [inst] (when inst (org.joda.time.LocalDate. inst)))
 (defn- inst->date-time [inst] (when inst (org.joda.time.DateTime. inst)))
 
+(defn- update-date->inst [m]
+  "returns the map m with :date fields converted from dates to insts"
+  (if (contains? m :date)
+    (update-in m [:date] date->inst)
+    m))
 
-(defn- edn->events
+(defn- update-inst->local-date [m]
+  "returns the map m with :date fields converted from insts to LocalDates"
+  (if (contains? m :date)
+    (update-in m [:date] inst->local-date)
+    m))
+
+
+(defn- edn->maps
   [edn]
   (->> edn
        (edn/read-string)
-       (map #(update-in % [:date] inst->local-date))
+       (map #(update-inst->local-date %))
        (into [])))
 
-(defn- edn->restaurants
-  [edn]
-  (->> edn
-       (edn/read-string)
-       (into [])))
-
-
-(defn- events->edn
-  [events]
-  (->> events
-       (map #(update-in % [:date] date->inst))
+(defn- maps->edn
+  [maps]
+  (->> maps
+       (map #(update-date->inst %))
        (pr-str)))
 
 
-(defn read-events
+(defn read-maps
   [filename]
   (->> filename
        (slurp-filename)
-       (edn->events)))
+       (edn->maps)))
+
+(defn read-events [filename] (read-maps filename))
+(defn read-restaurants [filename] (read-maps filename))
 
 
 (defn overwrite-events
   [events filename]
-  (spit filename (events->edn events)))
+  (spit filename (maps->edn events)))
 
 (defn append-event
   [event filename]
-  (spit filename (events->edn [event]) :append true))
+  (spit filename (maps->edn [event]) :append true))
 
-
-(defn read-restaurants
-  [filename]
-  (->> filename
-       (slurp-filename)
-       (edn->restaurants)))
-
+(defn append-command
+  [cmd filename]
+  (when (not= :find-nags (:command-type cmd))
+    (spit filename (maps->edn [cmd]) :append true)))
 

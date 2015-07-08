@@ -10,3 +10,4 @@ pom.xml.asc
 api-token.txt
 events.edn
 restaurants.edn
+commands.edn
