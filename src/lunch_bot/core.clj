@@ -54,13 +54,16 @@
 (defmethod handle-event :default [_ _] nil)
 
 (defmethod handle-event :choose
-  [event _]
-  (let [restaurant (:restaurant event)
-        menu-url (:menu-url restaurant)
-        channel-id (get-lunch-channel-id)]
-    (web/channels-setTopic *api-token* channel-id
+  [{:keys [restaurant] :as event} _]
+  (let [menu-url (:menu-url restaurant)]
+    (web/channels-setTopic *api-token* (get-lunch-channel-id)
                            (str "ordering " (:name restaurant)
                                 (when menu-url (str " " menu-url))))))
+
+(defmethod handle-event :bought
+  [{:keys [date] :as event} _]
+  (when (= date (time/today))
+    (web/channels-setTopic *api-token* (get-lunch-channel-id) "")))
 
 (defmethod handle-event :found-nags
   [{:keys [date costless-ins boughtless?] :as event} {:keys [meals] :as aggs}]
