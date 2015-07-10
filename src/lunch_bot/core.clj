@@ -230,18 +230,3 @@
     (finally
       (stop)
       (shutdown-agents))))
-
-
-; todo ‘order usual’ - usual defaults to most recent order, or user setting
-; todo 'usual food food food' - set usual for chosen restaurant
-; todo 'yesterday', 'monday', 'last thursday', 'this week', '1/28'
-; todo 'add superdawg' or 'restaurant superdawg' - create restaurant
-; todo 'add superdawg http://www.superdawg.com/menu.cfm 773-763-0660'
-; todo 'superdawg 7737630660 http://www.superdawg.com/menu.cfm' - update restaurant
-; todo 'bw3 thursday'
-; todo 'remove superdog', 'rename superdog superdawg'
-; todo recognize 'steve paid carla 23' for privileged users
-; todo talk converts person's name to "you" in DMs
-; todo attempt to interpret multi-line messages as one command per line
-; todo lunchbot suggests a restaurant based on history for day of week, or at random
-; todo handle edited messages
