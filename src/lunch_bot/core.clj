@@ -162,6 +162,8 @@
 
 (def heartbeating (atom false))
 
+(def heartbeat-loop (atom nil))
+
 (defn heartbeat []
   (handle-command {:command-type :find-nags
                    :date         (time/today)
@@ -170,18 +172,21 @@
 
 (defn start-heartbeat []
   (swap! heartbeating (constantly true))
-  (future
-    (loop []
-      (print "\\")
-      (flush)
-      (Thread/sleep 5000)
-      (print "/")
-      (flush)
-      (heartbeat)
-      (when @heartbeating (recur)))))
+  (swap! heartbeat-loop (constantly
+                          (future
+                            (loop []
+                              (print "\\")
+                              (flush)
+                              (Thread/sleep 5000)
+                              (print "/")
+                              (flush)
+                              (heartbeat)
+                              (when @heartbeating (recur)))))))
 
 (defn stop-heartbeat []
-  (swap! heartbeating (constantly false)))
+  "kill the heartbeat loop and block until the loop exits"
+  (swap! heartbeating (constantly false))
+  (future-cancel @heartbeat-loop))
 
 
 (defn wait-for-console-quit []
