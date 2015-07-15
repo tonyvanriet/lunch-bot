@@ -1,7 +1,8 @@
 (ns lunch-bot.store
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [clojure.string :as str]))
 
 
 (defn slurp-filename
@@ -38,18 +39,34 @@
     m))
 
 
+(defn- edn->map
+  [edn]
+  (-> edn
+      (edn/read-string)
+      (update-inst->local-date)))
+
 (defn- edn->maps
+  "converts each line of the edn string into a map and returns the resulting collection of maps"
   [edn]
   (->> edn
-       (edn/read-string)
-       (map #(update-inst->local-date %))
+       (str/split-lines)
+       (map edn->map)
        (into [])))
 
+
+(defn map->edn
+  "returns a string with the map m converted to edn"
+  [m]
+  (-> m
+      (update-date->inst)
+      (pr-str)))
+
 (defn- maps->edn
-  [maps]
-  (->> maps
-       (map #(update-date->inst %))
-       (pr-str)))
+  "returns a string with a line for each map in ms, converted to edn"
+  [ms]
+  (let [ms-edn (map map->edn ms)
+        ms-edn-lines (interleave ms-edn (repeat "\n"))]
+    (reduce str ms-edn-lines)))
 
 
 (defn read-maps
@@ -64,11 +81,12 @@
 
 (defn overwrite-events
   [events filename]
-  (spit filename (maps->edn events)))
+  (let [events-edn (maps->edn events)]
+    (spit filename events-edn)))
 
 (defn append-event
   [event filename]
-  (spit filename (maps->edn [event]) :append true))
+  (spit filename (str (map->edn event) "\n") :append true))
 
 (defn append-command
   [cmd filename]
