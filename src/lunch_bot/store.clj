@@ -91,5 +91,5 @@
 (defn append-command
   [cmd filename]
   (when (not= :find-nags (:command-type cmd))
-    (spit filename (maps->edn [cmd]) :append true)))
+    (spit filename (str (map->edn cmd) "\n") :append true)))
 
