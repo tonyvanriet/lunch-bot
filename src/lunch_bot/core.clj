@@ -175,12 +175,8 @@
   (swap! heartbeat-loop (constantly
                           (future
                             (loop []
-                              (print "\\")
-                              (flush)
-                              (Thread/sleep 5000)
-                              (print "/")
-                              (flush)
                               (heartbeat)
+                              (Thread/sleep 5000)
                               (when @heartbeating (recur)))))))
 
 (defn stop-heartbeat []
