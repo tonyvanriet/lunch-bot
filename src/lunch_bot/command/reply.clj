@@ -71,9 +71,10 @@
 (defmethod command->replies [:show :meal-summary]
   [{:keys [date] :as cmd} {:keys [meals] :as aggs} _]
   (let [meal (get meals date)]
-    [(make-command-return-reply cmd (if (or (time/before? date (time/today)) (meal/any-bought? meal))
-                                      (talk/post-order-summary date meal)
-                                      (talk/pre-order-summary meal)))]))
+    (cond (time/after? date (time/today)) [(make-command-return-reply cmd (str "That lunch hasn't happened yet."))]
+          :else [(make-command-return-reply cmd (if (or (time/before? date (time/today)) (meal/any-bought? meal))
+                                            (talk/post-order-summary date meal)
+                                            (talk/pre-order-summary meal)))])))
 
 (defmethod command->replies [:show :ordered?]
   [{:keys [requestor] :as cmd} {:keys [meals] :as aggs} _]
@@ -90,11 +91,12 @@
     [(make-command-return-reply cmd (talk/discrepant-meals-summary discrepant-meals))]))
 
 (defmethod command->replies [:submit-payment nil]
-  [{:keys [amount to] :as cmd} _ events]
+  [{:keys [amount to date] :as cmd} _ events]
   (cond (< amount 0M) [(make-command-return-reply
                          cmd (str "You can't pay a negative amount. Try using the borrowed command."))]
         (= amount 0M) [(make-command-return-reply
                          cmd (str "You paid " (talk/person->str to) " 0? Good for you."))]
+        (time/after? date (time/today)) [(make-command-return-reply cmd (str "Don't talk to me about the future."))]
         :else (let [requestor-reply (make-command-return-reply cmd (events->reply events))
                     paid-event (first (filter #(= (:type %) :paid) events))
                     recipient-reply (talk/make-user-message (:to paid-event)
@@ -102,11 +104,12 @@
                 [requestor-reply recipient-reply])))
 
 (defmethod command->replies [:submit-debt nil]
-  [{:keys [amount from] :as cmd} _ events]
+  [{:keys [amount from date] :as cmd} _ events]
   (cond (< amount 0M) [(make-command-return-reply
                          cmd (str "You can't borrow a negative amount. Try using the paid command."))]
         (= amount 0M) [(make-command-return-reply
                          cmd (str "You borrowed 0 from " (talk/person->str from) "? Good for you."))]
+        (time/after? date (time/today)) [(make-command-return-reply cmd (str "Don't talk to me about the future."))]
         :else (let [requestor-reply (make-command-return-reply cmd (events->reply events))
                     borrowed-event (first (filter #(= (:type %) :borrowed) events))
                     recipient-reply (talk/make-user-message (:from borrowed-event)
@@ -114,13 +117,15 @@
                 [requestor-reply recipient-reply])))
 
 (defmethod command->replies [:submit-bought nil]
-  [{:keys [amount] :as cmd} _ events]
+  [{:keys [amount date] :as cmd} _ events]
   (cond (< amount 0M) [(make-command-return-reply cmd (str "You can't buy lunch for less than 0."))]
+        (time/after? date (time/today)) [(make-command-return-reply cmd (str "Don't talk to me about the future."))]
         :else [(make-command-return-reply cmd (events->reply events))]))
 
 (defmethod command->replies [:submit-cost nil]
-  [{:keys [amount] :as cmd} _ events]
+  [{:keys [amount date] :as cmd} _ events]
   (cond (< amount 0M) [(make-command-return-reply cmd (str "Your lunch can't cost less than 0."))]
+        (time/after? date (time/today)) [(make-command-return-reply cmd (str "Don't talk to me about the future."))]
         :else [(make-command-return-reply cmd (events->reply events))]))
 
 (defmethod command->replies [:declare-in nil] [cmd _ events]

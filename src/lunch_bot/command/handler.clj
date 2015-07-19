@@ -59,21 +59,21 @@
 
 (defmethod command->events :submit-payment
   [{:keys [amount to date] :as cmd} _]
-  (when (> amount 0M)
+  (when (and (> amount 0M) (not (time/after? date (time/today))))
     [(make-event cmd :paid {:amount amount
                             :to     to
                             :date   date})]))
 
 (defmethod command->events :submit-debt
   [{:keys [amount from date] :as cmd} _]
-  (when (> amount 0M)
+  (when (and (> amount 0M) (not (time/after? date (time/today))))
     [(make-event cmd :borrowed {:amount amount
                                 :from   from
                                 :date   date})]))
 
 (defmethod command->events :submit-bought
   [{:keys [amount date requestor] :as cmd} {:keys [meals] :as aggs}]
-  (when (>= amount 0M)
+  (when (and (>= amount 0M) (not (time/after? date (time/today))))
     (let [meal (get meals date)
           previous-bought-amount (get-in meal [:people requestor :bought])
           unbought-event (when previous-bought-amount
@@ -87,7 +87,7 @@
 
 (defmethod command->events :submit-cost
   [{:keys [amount +tax? date requestor] :as cmd} {:keys [meals] :as aggs}]
-  (when (>= amount 0M)
+  (when (and (>= amount 0M) (not (time/after? date (time/today))))
     (let [meal (get meals date)
           restaurant (:chosen-restaurant meal)
           sales-tax-rate (if (:sales-tax-rate restaurant)
