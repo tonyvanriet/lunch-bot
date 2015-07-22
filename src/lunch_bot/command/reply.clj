@@ -137,5 +137,9 @@
 (defmethod command->replies [:choose-restaurant nil] [_ _ events]
   [(talk/make-lunch-message (events->reply events))])
 
+(defmethod command->replies [:suggest-restaurant nil]
+  [{:keys [requestor restaurant]} _ _]
+  [(talk/make-lunch-message (str (talk/person->str requestor) " thinks we should eat " (:name restaurant)))])
+
 (defmethod command->replies [:submit-order nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])

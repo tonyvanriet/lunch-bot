@@ -28,7 +28,8 @@
                      :out      ["out"]
                      :help     ["help"]
                      :+tax     ["tax" "+tax"]
-                     :nag      ["nags"]})
+                     :nag      ["nags"]
+                     :suggest  ["suggest"]})
 
 (def noun-str-map {:balances      ["balances"]
                    :pay?          ["pay?"]

@@ -127,6 +127,12 @@
   {:command-type :declare-out
    :date         (time/today)})
 
+(defmethod command-template->command [:suggest :restaurant]
+  [[[_ _] [_ restaurant]]]
+  {:command-type :suggest-restaurant
+   :restaurant   restaurant
+   :date         (time/today)})
+
 (defmethod command-template->command [:choose :restaurant]
   [[[_ _] [_ restaurant]]]
   {:command-type :choose-restaurant
@@ -148,4 +154,3 @@
   [[action-elem]]
   {:command-type :find-nags
    :date         (time/today)})
-
