@@ -134,10 +134,12 @@
 
 
 (defn pre-order-summary
-  [meal]
-  (let [{:keys [chosen-restaurant-name ins outs orderless-ins]} (meal/summary meal)]
+  [{:keys [chosen-restaurant] :as meal}]
+  (let [{:keys [chosen-restaurant-name ins outs orderless-ins]} (meal/summary meal)
+        chosen-restaurant-phone-number (:phone-number chosen-restaurant)]
     (str (if chosen-restaurant-name
-           (str "Ordering " chosen-restaurant-name "\n")
+           (str "Ordering " chosen-restaurant-name "\n"
+                (when chosen-restaurant-phone-number (str chosen-restaurant-phone-number "\n")))
            (str "Waiting for somebody to choose a restaurant" "\n"))
          (when (seq ins)
            (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
