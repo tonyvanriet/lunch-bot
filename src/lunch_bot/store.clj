@@ -48,10 +48,11 @@
 (defn- edn->maps
   "converts each line of the edn string into a map and returns the resulting collection of maps"
   [edn]
-  (->> edn
-       (str/split-lines)
-       (map edn->map)
-       (into [])))
+  (when edn
+    (->> edn
+         (str/split-lines)
+         (map edn->map)
+         (into []))))
 
 
 (defn map->edn
