@@ -7,14 +7,16 @@
      [store :as store]
      [event :as event]
      [aggregate :as aggregate]
-     [restaurant :as restaurant]]
+     [restaurant :as restaurant]
+     [handler :as ring-handler]]
     [lunch-bot.command.handler :as handler]
     [lunch-bot.command.reply :as reply]
     [clj-slack-client
      [core :as slack]
      [team-state :as state]
      [web :as web]]
-    [clj-time.core :as time]))
+    [clj-time.core :as time]
+    [org.httpkit.server :refer [run-server]]))
 
 
 (def api-token-filename "api-token.txt")
@@ -213,6 +215,7 @@
      (slack/connect *api-token* try-handle-slack-event)
      (start-heartbeat)
      (println "lunch-bot running...")
+     (run-server ring-handler/app {:port 3000})
      (catch Exception ex
        (println ex)
        (println "couldn't start lunch-bot")
