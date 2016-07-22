@@ -38,7 +38,7 @@
                    :discrepancies ["discrepancy" "discrepancies"]})
 
 (def filler-str-map {:filler ["lunch" "for" "i" "my" "i'm" "on" "have"
-                              "the" "what" "who" "should" "+" "plus" "from"]})
+                              "the" "what" "who" "should" "+" "plus" "to" "from"]})
 
 (def relative-date-str-map {:today     ["today"]
                             :yesterday ["yesterday"]})
