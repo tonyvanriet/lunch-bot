@@ -135,7 +135,7 @@
 
 (defn pre-order-summary
   [{:keys [chosen-restaurant] :as meal}]
-  (let [{:keys [chosen-restaurant-name ins outs orderless-ins]} (meal/summary meal)
+  (let [{:keys [chosen-restaurant-name ins outs orderless-ins diners]} (meal/summary meal)
         chosen-restaurant-phone-number (:phone-number chosen-restaurant)]
     (str (if chosen-restaurant-name
            (str "Ordering " chosen-restaurant-name "\n"
@@ -143,8 +143,13 @@
            (str "Waiting for somebody to choose a restaurant" "\n"))
          (when (seq ins)
            (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
+         (when-not (nil? diners)
+           (str (count ins) " of " diners " " (if ((count ins) 1) "is" "are") " *in*" "\n"))
          (when (seq outs)
            (str (people->str outs) " " (if (= (count outs) 1) "is" "are") " *out*" "\n"))
+         (when-not (nil? diners)
+           (let [diners-out (- diners (count ins))]
+             (str diners-out " of " diners " " (if (= diners-out 1) "is" "are") " *out*" "\n")))
          (when (and chosen-restaurant-name (seq orderless-ins))
            (str "Waiting for " (if (= (count orderless-ins) 1) "an order" "orders")
                 " from " (people->str orderless-ins) "\n"))
@@ -164,6 +169,8 @@
            (str buyers-str " *bought*" "\n"))
          (when (seq ins)
            (str (people->str ins) " " (if multiple-ins? "were" "was") " *in*" "\n"))
+         (when-not (nil? diners)
+           (str (count ins) " of " diners " " (if multiple-ins? "were" "was") " *in*" "\n"))
          (when (seq costless-ins)
            (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
                 (when (= (> (count costless-ins) 1) "es")) "\n"))

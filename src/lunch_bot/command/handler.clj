@@ -121,6 +121,10 @@
       [uncost-event out-event]
       [out-event])))
 
+(defmethod command->events :declare-diners
+  [{:keys [date] :as cmd} _]
+  [(make-event cmd :diners {:date date})])
+
 (defmethod command->events :choose-restaurant
   [{:keys [restaurant date] :as cmd} {:keys [meals] :as aggs}]
   (let [meal (get meals date)]

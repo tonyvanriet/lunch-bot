@@ -11,6 +11,7 @@
 
 (def example-meal
   {:chosen-restaurant {:name "BW3"}
+   :diners            3
    :people            {"bob"  {:status :in
                                :order  "jumbo dog\nno hot peppers\nlg fry"
                                :cost   8.5M}
@@ -29,6 +30,10 @@
 (defn dispatch-apply-event-to-meals [meals event] (:type event))
 
 (defmulti apply-event-to-meals #'dispatch-apply-event-to-meals)
+
+(defmethod apply-event-to-meals :diners
+  [meals {:keys [date diners] :as event}]
+  (assoc-in meals [date :diners] diners))
 
 (defmethod apply-event-to-meals :in
   [meals {:keys [date person] :as event}]
@@ -118,6 +123,7 @@
   [meal]
   (let [ins (people-in meal)]
     {:chosen-restaurant-name (-> meal :chosen-restaurant :name)
+     :diners                 (get meal :diners)
      :ins                    ins
      :outs                   (people-out meal)
      :orderless-ins          (filter #(not (person-ordered? meal %)) ins)

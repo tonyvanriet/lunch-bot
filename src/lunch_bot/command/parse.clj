@@ -29,7 +29,8 @@
                      :help     ["help"]
                      :+tax     ["tax" "+tax"]
                      :nag      ["nags"]
-                     :suggest  ["suggest"]})
+                     :suggest  ["suggest"]
+                     :diners   ["diners" "people"]})
 
 (def noun-str-map {:balances      ["balances"]
                    :pay?          ["pay?"]
