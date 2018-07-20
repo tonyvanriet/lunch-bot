@@ -158,7 +158,7 @@
 
 (defn post-order-summary
   [date meal]
-  (let [{:keys [chosen-restaurant-name ins costless-ins buyers buyer-surplus]} (meal/summary meal)
+  (let [{:keys [chosen-restaurant-name ins costless-ins buyers buyer-surplus diners]} (meal/summary meal)
         multiple-ins? (> (count ins) 1)
         buyers-str (people->str buyers)
         multiple-buyers? (> (count buyers) 1)]
