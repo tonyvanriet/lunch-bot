@@ -32,8 +32,8 @@
 (defmulti apply-event-to-meals #'dispatch-apply-event-to-meals)
 
 (defmethod apply-event-to-meals :diners
-  [meals {:keys [date diners] :as event}]
-  (assoc-in meals [date :diners] diners))
+  [meals {:keys [date number] :as event}]
+  (assoc-in meals [date :diners] number))
 
 (defmethod apply-event-to-meals :in
   [meals {:keys [date person] :as event}]

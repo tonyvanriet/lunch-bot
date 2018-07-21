@@ -144,12 +144,9 @@
          (when (seq ins)
            (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
          (when-not (nil? diners)
-           (str (count ins) " of " diners " " (if ((count ins) 1) "is" "are") " *in*" "\n"))
+           (str (count ins) " of " diners " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
          (when (seq outs)
            (str (people->str outs) " " (if (= (count outs) 1) "is" "are") " *out*" "\n"))
-         (when-not (nil? diners)
-           (let [diners-out (- diners (count ins))]
-             (str diners-out " of " diners " " (if (= diners-out 1) "is" "are") " *out*" "\n")))
          (when (and chosen-restaurant-name (seq orderless-ins))
            (str "Waiting for " (if (= (count orderless-ins) 1) "an order" "orders")
                 " from " (people->str orderless-ins) "\n"))
