@@ -141,10 +141,13 @@
            (str "Ordering " chosen-restaurant-name "\n"
                 (when chosen-restaurant-phone-number (str chosen-restaurant-phone-number "\n")))
            (str "Waiting for somebody to choose a restaurant" "\n"))
-         (when (seq ins)
-           (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
          (when-not (nil? diners)
-           (str (count ins) " of " diners " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
+           (str (count ins) " of " diners " " (if (= (count ins) 1) "is" "are") " *in*"
+                (if (seq ins) "" "\n")))
+         (when (seq ins)
+           (if (nil? diners)
+             (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n")
+             (str " (" (people->str ins) ")\n")))
          (when (seq outs)
            (str (people->str outs) " " (if (= (count outs) 1) "is" "are") " *out*" "\n"))
          (when (and chosen-restaurant-name (seq orderless-ins))
