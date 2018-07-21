@@ -117,8 +117,8 @@
   (command-template->command [action-elem (get-default-cost-date-elem) amount-elem (get-default-cost-+tax-elem)]))
 
 
-(defmethod command-template->command [:diners :amount]
-  [[[_ _] [_ amount]]]
+(defmethod command-template->command [:amount :diners]
+  [[[_ amount] [_ _]]]
   {:command-type :declare-diners
    :number       (int amount)
    :date         (time/today)})
