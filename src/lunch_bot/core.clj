@@ -21,8 +21,7 @@
 (def lunch-channel-name "lunch")
 (def commands-filename "commands.edn")
 
-(def ^:dynamic *api-token* nil)
-
+(def api-token (store/read-api-token api-token-filename))
 
 (defn get-lunch-channel-id [] (:id (state/name->channel lunch-channel-name)))
 
@@ -33,7 +32,7 @@
   [user-id]
   (if-let [dm-id (state/user-id->dm-id user-id)]
     dm-id
-    (web/im-open *api-token* user-id)))
+    (web/im-open api-token user-id)))
 
 
 (defn distribute-message
@@ -56,14 +55,14 @@
 (defmethod handle-event :choose
   [{:keys [restaurant] :as event} _]
   (let [menu-url (:menu-url restaurant)]
-    (web/channels-setTopic *api-token* (get-lunch-channel-id)
+    (web/channels-setTopic api-token (get-lunch-channel-id)
                            (str "ordering " (:name restaurant)
                                 (when menu-url (str " " menu-url))))))
 
 (defmethod handle-event :bought
   [{:keys [date] :as event} _]
   (when (= date (time/today))
-    (web/channels-setTopic *api-token* (get-lunch-channel-id) "")))
+    (web/channels-setTopic api-token (get-lunch-channel-id) "")))
 
 (defmethod handle-event :found-nags
   [{:keys [date costless-ins boughtless?] :as event} {:keys [meals] :as aggs}]
@@ -203,20 +202,17 @@
   (shutdown-app))
 
 (defn start
-  ([]
-   (start (store/read-api-token api-token-filename)))
-  ([api-token]
-   (try
-     (event/initialize-events)
-     (restaurant/initialize-restaurants)
-     (alter-var-root (var *api-token*) (constantly api-token))
-     (slack/connect *api-token* try-handle-slack-event)
-     (start-heartbeat)
-     (println "lunch-bot running...")
-     (catch Exception ex
-       (println ex)
-       (println "couldn't start lunch-bot")
-       (stop)))))
+  []
+  (try
+    (event/initialize-events)
+    (restaurant/initialize-restaurants)
+    (slack/connect api-token try-handle-slack-event)
+    (start-heartbeat)
+    (println "lunch-bot running...")
+    (catch Exception ex
+      (println ex)
+      (println "couldn't start lunch-bot")
+      (stop))))
 
 (defn restart []
   (stop)
