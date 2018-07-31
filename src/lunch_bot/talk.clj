@@ -135,14 +135,19 @@
 
 (defn pre-order-summary
   [{:keys [chosen-restaurant] :as meal}]
-  (let [{:keys [chosen-restaurant-name ins outs orderless-ins]} (meal/summary meal)
+  (let [{:keys [chosen-restaurant-name ins outs orderless-ins diners]} (meal/summary meal)
         chosen-restaurant-phone-number (:phone-number chosen-restaurant)]
     (str (if chosen-restaurant-name
            (str "Ordering " chosen-restaurant-name "\n"
                 (when chosen-restaurant-phone-number (str chosen-restaurant-phone-number "\n")))
            (str "Waiting for somebody to choose a restaurant" "\n"))
+         (when-not (nil? diners)
+           (str (count ins) " of " diners " " (if (= (count ins) 1) "is" "are") " *in*"
+                (if (seq ins) "" "\n")))
          (when (seq ins)
-           (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n"))
+           (if (nil? diners)
+             (str (people->str ins) " " (if (= (count ins) 1) "is" "are") " *in*" "\n")
+             (str " (" (people->str ins) ")\n")))
          (when (seq outs)
            (str (people->str outs) " " (if (= (count outs) 1) "is" "are") " *out*" "\n"))
          (when (and chosen-restaurant-name (seq orderless-ins))
@@ -153,7 +158,7 @@
 
 (defn post-order-summary
   [date meal]
-  (let [{:keys [chosen-restaurant-name ins costless-ins buyers buyer-surplus]} (meal/summary meal)
+  (let [{:keys [chosen-restaurant-name ins costless-ins buyers buyer-surplus diners]} (meal/summary meal)
         multiple-ins? (> (count ins) 1)
         buyers-str (people->str buyers)
         multiple-buyers? (> (count buyers) 1)]
@@ -164,6 +169,8 @@
            (str buyers-str " *bought*" "\n"))
          (when (seq ins)
            (str (people->str ins) " " (if multiple-ins? "were" "was") " *in*" "\n"))
+         (when-not (nil? diners)
+           (str (count ins) " of " diners " " (if multiple-ins? "were" "was") " *in*" "\n"))
          (when (seq costless-ins)
            (str "Waiting for the *cost* of " (people->str costless-ins) "'s lunch"
                 (when (= (> (count costless-ins) 1) "es")) "\n"))

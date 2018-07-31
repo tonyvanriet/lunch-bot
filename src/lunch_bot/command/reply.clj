@@ -134,6 +134,10 @@
 (defmethod command->replies [:declare-out nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
 
+(defmethod command->replies [:declare-diners nil]
+  [{:keys [number]} _ _]
+  [(talk/make-lunch-message (str number " people dining today."))])
+
 (defmethod command->replies [:choose-restaurant nil] [_ _ events]
   [(talk/make-lunch-message (events->reply events))])
 

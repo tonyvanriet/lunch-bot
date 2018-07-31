@@ -23,6 +23,17 @@
   (is (= (command-text->command "asdf") {:command-type :unrecognized})))
 
 
+(deftest process-command-number-of-diners
+  (is (= (command-text->command  "12 people")
+         {:command-type :declare-diners
+          :number 12
+          :date (time/today)}))
+  (is (= (command-text->command "2.5 people")
+         {:command-type :declare-diners
+          :number 2    ; it casts to int
+          :date (time/today)})))
+
+
 (deftest parse-amounts
   (are [word amount]
     (= (word->amount word) amount)
