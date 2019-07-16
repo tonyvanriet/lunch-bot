@@ -195,10 +195,13 @@
   (apply str (for [date-meal (sort-by key meals)]
                (discrepant-meal-summary (key date-meal) (val date-meal)))))
 
-
 (defn person-meal->str
   [index {:keys [order] :as meal-order}]
-  (str (+ index 1) ". `" order "`\n"))
+  (apply str (+ index 1) ".\n"
+         "```\n"
+         "order\n"
+         order "\n"
+         "```\n"))
 
 (defn person-meal-history
   [person-meals restaurant]
