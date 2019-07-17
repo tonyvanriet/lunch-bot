@@ -146,6 +146,17 @@
   [(make-event cmd :order {:food food
                            :date date})])
 
+(defmethod command->events :reorder
+  [{:keys [index date requestor] :as cmd} {:keys [meals] :as aggs}]
+  (let [todays-meal (get meals (time/today))]
+    (if-let [todays-restaurant (:chosen-restaurant todays-meal)]
+      (let [recent-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
+        (println index)
+        (if (and (> index 0) (<= index (count recent-meals)))
+          [(make-event cmd :order {:food (:order (nth recent-meals index))
+                                   :date date})]
+          []))
+      [])))
 
 (defmethod command->events :find-nags
   [{:keys [date] :as cmd} {:keys [meals] :as aggs}]

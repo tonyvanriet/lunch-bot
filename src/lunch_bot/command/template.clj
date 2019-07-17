@@ -151,6 +151,12 @@
    :food         food
    :date         (time/today)})
 
+(defmethod command-template->command [:reorder :amount]
+  [[[_ _] [_ index]]]
+  {:command-type :reorder
+   :index        (- (int index) 1) ; make it zero indexed
+   :date         (time/today)})
+
 (defmethod command-template->command [:nag :date]
   [[[_ _] [_ date]]]
   {:command-type :find-nags

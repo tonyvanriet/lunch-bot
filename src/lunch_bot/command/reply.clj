@@ -147,3 +147,18 @@
 
 (defmethod command->replies [:submit-order nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
+
+(defmethod command->replies [:reorder nil]
+  [{:keys [requestor index] :as cmd} {:keys [meals] :as aggs} events]
+  (if (> (count events) 0)
+    [(make-command-return-reply cmd (events->reply events))]
+    ; if we didn't emit an event, either there is no restaurant or there isn't
+    ; a meal at index `index`
+    (let [todays-meal (get meals (time/today))
+          reply-text (if-let [todays-restaurant (:chosen-restaurant todays-meal)]
+                       (let [recent-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
+                         (do
+                           (println recent-meals)
+                           (str "Couldn't find meal " (+ index 1) " in your recent meals")))
+                       "Somebody needs to choose a restaurant first.")]
+      [(talk/make-user-message requestor reply-text)])))

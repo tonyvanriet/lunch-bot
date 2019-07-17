@@ -199,7 +199,6 @@
   [index {:keys [order] :as meal-order}]
   (apply str (+ index 1) ".\n"
          "```\n"
-         "order\n"
          order "\n"
          "```\n"))
 
