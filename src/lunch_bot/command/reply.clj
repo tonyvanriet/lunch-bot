@@ -155,8 +155,7 @@
     ; if we didn't emit an event, either there is no restaurant or there isn't
     ; a meal at index `index`
     (let [todays-meal (get meals (time/today))
-          reply-text (if-let [todays-restaurant (:chosen-restaurant todays-meal)]
-                       (let [recent-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
-                        (str "Couldn't find meal " (+ index 1) " in your recent meals"))
+          reply-text (if (nil? (:chosen-restaurant todays-meal))
+                       (str "Couldn't find meal " (+ index 1) " in your recent meals")
                        "Somebody needs to choose a restaurant first.")]
       [(talk/make-user-message requestor reply-text)])))
