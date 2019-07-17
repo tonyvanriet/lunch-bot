@@ -195,19 +195,19 @@
   (apply str (for [date-meal (sort-by key meals)]
                (discrepant-meal-summary (key date-meal) (val date-meal)))))
 
-
 (defn person-meal->str
-  [{:keys [order cost] :as meal-order}]
-  (str "```" "order\n"
-       order "\n"
-       #_(when cost (str "cost " cost))
-       "```\n"))
+  [index {:keys [order] :as meal-order}]
+  (apply str (+ index 1) ".\n"
+         "```\n"
+         "order\n"
+         order "\n"
+         "```\n"))
 
 (defn person-meal-history
   [person-meals restaurant]
   (if (seq person-meals)
-    (apply str "Your latest orders for " (:name restaurant) "\n"
-           (map person-meal->str person-meals))
+    (apply str "Your latest orders from " (:name restaurant) "\n"
+           (map-indexed person-meal->str person-meals))
     (str "You haven't ordered from " (:name restaurant))))
 
 
