@@ -24,6 +24,7 @@
                      :cost     ["cost"]
                      :choose   ["choose"]
                      :order    ["order"]
+                     :reorder  ["reorder"]
                      :in       ["in"]
                      :out      ["out"]
                      :help     ["help"]

@@ -197,11 +197,10 @@
 
 (defn person-meal->str
   [index {:keys [order] :as meal-order}]
-  (apply str (+ index 1) ".\n"
-         "```\n"
-         "order\n"
-         order "\n"
-         "```\n"))
+  (str (+ index 1) ".\n"
+       "```\n"
+       order "\n"
+       "```\n"))
 
 (defn person-meal-history
   [person-meals restaurant]
