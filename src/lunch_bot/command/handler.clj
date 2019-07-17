@@ -148,7 +148,7 @@
 
 (defmethod command->events :reorder
   [{:keys [index date requestor] :as cmd} {:keys [meals] :as aggs}]
-  (let [todays-meal (get meals (time/today))]
+  (let [todays-meal (get meals date)]
     (if-let [todays-restaurant (:chosen-restaurant todays-meal)]
       (let [recent-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
         (if (and (>= index 0) (<= index (count recent-meals)))
