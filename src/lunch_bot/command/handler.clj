@@ -151,7 +151,6 @@
   (let [todays-meal (get meals (time/today))]
     (if-let [todays-restaurant (:chosen-restaurant todays-meal)]
       (let [recent-meals (meal/person-meal-history meals todays-restaurant requestor 3)]
-        (println index)
         (if (and (>= index 0) (<= index (count recent-meals)))
           [(make-event cmd :order {:food (:order (nth recent-meals index))
                                    :date date})]
