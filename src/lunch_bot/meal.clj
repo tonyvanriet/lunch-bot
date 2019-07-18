@@ -115,8 +115,9 @@
        (filter #(person-ordered? (val %) person))
        (into (sorted-map))
        (reverse)
-       (take n)
-       (map #(-> % val :people (get person)))))
+       (map #(-> % val :people (get person)))
+       (distinct)
+       (take n)))
 
 
 (defn summary
