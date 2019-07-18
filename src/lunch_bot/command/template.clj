@@ -151,6 +151,12 @@
    :food         food
    :date         (time/today)})
 
+(defmethod command-template->command [:copy :user]
+  [[[_ _] [_ copy-from]]]
+  {:command-type :copy-order
+   :copy-from    copy-from
+   :date         (time/today)})
+
 (defmethod command-template->command [:reorder :amount]
   [[[_ _] [_ index]]]
   {:command-type :reorder
