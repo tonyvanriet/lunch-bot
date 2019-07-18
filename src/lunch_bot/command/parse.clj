@@ -24,6 +24,7 @@
                      :cost     ["cost"]
                      :choose   ["choose"]
                      :order    ["order"]
+                     :copy     ["copy"]
                      :reorder  ["reorder"]
                      :in       ["in"]
                      :out      ["out"]

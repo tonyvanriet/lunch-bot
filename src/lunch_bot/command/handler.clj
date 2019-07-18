@@ -146,6 +146,14 @@
   [(make-event cmd :order {:food food
                            :date date})])
 
+(defmethod command->events :copy-order
+  [{:keys [copy-from date] :as cmd} {:keys [meals] :as aggs}]
+  #_(println (get-in meals [(time/today)]))
+  (if-let [copy-from-food (get-in meals [(time/today) :people copy-from :order])]
+    [(make-event cmd :order {:food copy-from-food
+                             :date date})]
+    []))
+
 (defmethod command->events :reorder
   [{:keys [index date requestor] :as cmd} {:keys [meals] :as aggs}]
   (let [todays-meal (get meals date)]

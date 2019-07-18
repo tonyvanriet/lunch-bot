@@ -148,6 +148,14 @@
 (defmethod command->replies [:submit-order nil] [cmd _ events]
   [(make-command-return-reply cmd (events->reply events))])
 
+(defmethod command->replies [:copy-order nil]
+  [{:keys [requestor copy-from] :as cmd} _ events]
+  (if (= events [])
+    [(talk/make-user-message
+       requestor
+       (str "Could not find " copy-from "'s meal"))]
+    [(make-command-return-reply cmd (events->reply events))]))
+
 (defmethod command->replies [:reorder nil]
   [{:keys [requestor index] :as cmd} {:keys [meals] :as aggs} events]
   (if (> (count events) 0)
