@@ -55,13 +55,13 @@
 (defmethod handle-event :choose
   [{:keys [restaurant] :as event} _]
   (let [menu-url (:menu-url restaurant)]
-    (web/channels-setTopic api-token (get-lunch-channel-id)
+    #_(web/channels-setTopic api-token (get-lunch-channel-id)
                            (str "ordering " (:name restaurant)
                                 (when menu-url (str " " menu-url))))))
 
 (defmethod handle-event :bought
   [{:keys [date] :as event} _]
-  (when (= date (time/today))
+  #_(when (= date (time/today))
     (web/channels-setTopic api-token (get-lunch-channel-id) "")))
 
 (defmethod handle-event :found-nags
