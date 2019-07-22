@@ -138,8 +138,11 @@
   [{:keys [number]} _ _]
   [(talk/make-lunch-message (str number " people dining today."))])
 
-(defmethod command->replies [:choose-restaurant nil] [_ _ events]
-  [(talk/make-lunch-message (events->reply events))])
+(defmethod command->replies [:choose-restaurant nil]
+  [{:keys [requestor restaurant]} _ events]
+  (if (= events [])
+    [(talk/make-user-message requestor (str (:name restaurant) " has already been chosen!"))]
+    [(talk/make-lunch-message (events->reply events))]))
 
 (defmethod command->replies [:suggest-restaurant nil]
   [{:keys [requestor restaurant]} _ _]
