@@ -164,7 +164,7 @@
 (def heartbeat-loop (atom nil))
 
 (defn heartbeat []
-  (handle-command {:command-type :find-nags
+  #_(handle-command {:command-type :find-nags
                    :date         (time/today)
                    :ts           (slack/time->ts (time/now))}))
 
